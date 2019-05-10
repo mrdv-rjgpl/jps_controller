@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="limited" default="false"/>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="false"/>
+  
+  <!-- startup simulated world -->
+ <param name="/ur_driver/prevent_programming" value="true"/>
+  
+  <include file="$(find ur_modern_driver)/launch/ur5_bringup_compatible.launch">
+    <arg name="robot_ip" value="172.22.22.2"/>
+  </include>
+  
+  <include file="$(find traveler)/launch/viewer.launch"/>
+  <node 
+      pkg="traveler" 
+      type="trajectory"
+      name="trajectory"  
+      output="screen" >
+  </node>
+
+    <node 
+      pkg="control_node" 
+      type="main_controller"
+      name="main_controller"  
+      output="screen" >
+  </node>
+  
+
+  
+</launch>

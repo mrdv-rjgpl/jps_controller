@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--<arg name="model" default="$(find assignment1)/urdf/ur5_robot.urdf" />-->
+  <!--<param name="robot_description" textfile="$(arg model)" />-->
+<include file="$(find ur_gazebo)/launch/ur5_joint_limited.launch">
+    <arg name="gui" value="false"/>
+  </include>
+  
+ <!--  <node
+      name="robot_state_publisher" 
+      pkg="robot_state_publisher" 
+      type="robot_state_publisher" 
+      output="screen" >
+  </node> -->
+  
+  <include file="$(find traveler)/launch/viewer.launch"/>
+
+  <node pkg="rqt_gui"
+	type="rqt_gui"
+	name="rqt_gui"
+	args="--perspective-file $(find traveler)/traveler.perspective">
+  </node>
+
+
+  <node 
+      pkg="traveler" 
+      type="trajectory"
+      name="trajectory"  
+      output="screen" >
+  </node>
+
+    <node 
+      pkg="control_node" 
+      type="main_controller"
+      name="main_controller"  
+      output="screen" >
+  </node>
+  
+ <!--  <node
+      name="rviz" 
+      pkg="rviz"
+      type="rviz"
+      args="-d $(find traveler)/assignment1.rviz" required="true" >
+  </node> -->
+  
+</launch>
