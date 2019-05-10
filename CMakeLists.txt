@@ -10,7 +10,7 @@ project(jps_controller)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
-  rsopy
+  rospy
   std_msgs
   tf
   ur_modern_driver
