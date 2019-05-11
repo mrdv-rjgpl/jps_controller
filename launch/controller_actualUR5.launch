@@ -12,16 +12,16 @@
     <arg name="robot_ip" value="172.22.22.2"/>
   </include>
   
-  <include file="$(find traveler)/launch/viewer.launch"/>
+  <include file="$(find jps_traveler)/launch/viewer.launch"/>
   <node 
-      pkg="traveler" 
+      pkg="jps_traveler" 
       type="trajectory"
       name="trajectory"  
       output="screen" >
   </node>
 
     <node 
-      pkg="control_node" 
+      pkg="jps_controller" 
       type="main_controller"
       name="main_controller"  
       output="screen" >

@@ -14,6 +14,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <math.h>
 #include<std_msgs/UInt16.h>
+#include<std_msgs/Bool.h>
 
 
 class main_controller{
@@ -23,6 +24,7 @@ private:
 	ros::Subscriber sub_puzzlePiece;
 	ros::Publisher pub_trajectory;
 	ros::Publisher pub_gripper;
+	ros::Publisher pub_moved;
 	
 	tf::TransformListener listener;
 
@@ -35,6 +37,8 @@ private:
 	std_msgs::UInt16 angle_ungrip;
 	double z_distance;
 	double stepsize;
+	std_msgs::Bool msg;
+	
 
 
 	void travelAcrossPlane()
@@ -58,6 +62,8 @@ private:
 		// Eigen::Vector3d pos(0.266, 0.422, 0.432);
 		pub_trajectory.publish(pose);
 		ros::Duration(10).sleep();
+		pub_moved.publish(msg);
+		ros::Duration(2).sleep();
 		for(int i=1;i<=5;i++)
 		{
 			for(int j=1;j<=5;j++)
@@ -66,13 +72,17 @@ private:
 				pose.position.y+=1.5/50.0;
 				std::cout<<pose<<std::endl;
 				pub_trajectory.publish(pose);
-				ros::Duration(12).sleep();
+				ros::Duration(10).sleep();
+				pub_moved.publish(msg);
+				ros::Duration(2).sleep();
 				std::cout<<"pose executed"<<std::endl;
 			}
 			pose.position.x-=1.5/50;
 			pose.position.y=temp;
 			pub_trajectory.publish(pose);
-			ros::Duration(12).sleep();	
+			ros::Duration(10).sleep();	
+			pub_moved.publish(msg);
+			ros::Duration(2).sleep();		
 		}
 		std::cout<<"after everything"<<std::endl;
 
@@ -166,7 +176,9 @@ public:
 		angle_ungrip.data=0;
 		z_distance=0.3;
 		stepsize=0.1;
+		msg.data=true;
 		pub_trajectory=nh.advertise<geometry_msgs::Pose>("/setpoint", 1);
+		pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
 		travelAcrossPlane();

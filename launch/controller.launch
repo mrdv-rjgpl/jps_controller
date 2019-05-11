@@ -14,24 +14,24 @@
       output="screen" >
   </node> -->
   
-  <include file="$(find traveler)/launch/viewer.launch"/>
+  <include file="$(find jps_traveler)/launch/viewer.launch"/>
 
   <node pkg="rqt_gui"
 	type="rqt_gui"
 	name="rqt_gui"
-	args="--perspective-file $(find traveler)/traveler.perspective">
+	args="--perspective-file $(find jps_traveler)/traveler.perspective">
   </node>
 
 
   <node 
-      pkg="traveler" 
+      pkg="jps_traveler" 
       type="trajectory"
       name="trajectory"  
       output="screen" >
   </node>
 
     <node 
-      pkg="control_node" 
+      pkg="jps_controller" 
       type="main_controller"
       name="main_controller"  
       output="screen" >
