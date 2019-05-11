@@ -182,9 +182,9 @@ public:
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
 		travelAcrossPlane();
-		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
+		sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
 		
-		// pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
+		pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
 
 	}
 
