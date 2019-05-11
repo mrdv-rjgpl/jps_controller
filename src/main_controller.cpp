@@ -135,11 +135,11 @@ private:
 
 		//frame from base to vaccuum gripper
 		Eigen::Matrix<double,4,4> F_bvg=F_bp;
-		F_bvg(3,3)-=table_offset;
+		F_bvg(3,3)+=table_offset;
 
 		//this is the goal frame from base to ee. 
 		Eigen::Matrix<double,4,4> F_goal=F_bvg;
-		F_goal(3,3)-=gripper_offset;
+		F_goal(3,3)+=gripper_offset;
 
 		geometry_msgs::Pose goalPose = frame2pose(F_goal);
 
@@ -150,7 +150,7 @@ private:
 		ros::Duration(10).sleep();
 
 		//publish to position of puzzle piece going vertically down.
-		F_goal(3,3)+=table_offset;
+		F_goal(3,3)-=table_offset;
 		goalPose=frame2pose(F_goal);
 		pub_trajectory.publish(goalPose);
 		ros::Duration(10).sleep();
@@ -170,8 +170,8 @@ private:
 
 public:
 	main_controller(ros::NodeHandle& nh): nh(nh){
-		gripper_offset=0.0;
-		table_offset=0.0;
+		gripper_offset=84.3/1000.0;
+		table_offset=0.1;
 		angle_grip.data=150;
 		angle_ungrip.data=0;
 		z_distance=0.3;
@@ -182,9 +182,9 @@ public:
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
 		travelAcrossPlane();
-		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
+		sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
 		
-		// pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
+		pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
 
 	}
 
