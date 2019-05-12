@@ -106,11 +106,8 @@ private:
 
 	void findImageCenter(const geometry_msgs::PoseStamped imagePose)
 	{
-		// double x_gain = 0.1;
-		// double y_gain = 0.1;
-
-		double x_gain=imagePose.pose.position.z;
-		double y_gain=imagePose.pose.position.z;
+		double x_gain = 1/1000.0;
+		double y_gain = 1/1000.0;
 
 		if(imagePose.pose.position.z<0.01)
 		{
@@ -135,13 +132,14 @@ private:
 			geometry_msgs::Pose goalPose;
 			
 			//we only want to move in x and y. everything else remains as is. 
-			goalPose.position.x=x_gain*imagePose.pose.position.x;
-			goalPose.position.y=y_gain*imagePose.pose.position.y;
+			goalPose.position.x=x_gain*imagePose.pose.position.x + base_ee_transform.getOrigin().x();
+			goalPose.position.y=y_gain*imagePose.pose.position.y + base_ee_transform.getOrigin().y();
 			goalPose.position.z=base_ee_transform.getOrigin().z();	
 			goalPose.orientation.x=base_ee_transform.getRotation().x();
 			goalPose.orientation.y=base_ee_transform.getRotation().y();
 			goalPose.orientation.z=base_ee_transform.getRotation().z();
 			goalPose.orientation.w=base_ee_transform.getRotation().w();
+			ROS_INFO_STREAM("goal pose: "<<goalPose);
 			pub_trajectory.publish(goalPose);
 			ros::Duration(10).sleep();
 
