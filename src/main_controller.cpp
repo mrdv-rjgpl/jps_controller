@@ -219,7 +219,7 @@ private:
 
 			theta*=theta_gain;
 
-			Eigen::Quaterniond q_x(sin(theta/2), 0, 0, cos(theta/2));
+			Eigen::Quaterniond q_x(0, 0, sin(theta/2), cos(theta/2));
 			Eigen::Quaterniond q_curr(base_ee_transform.getRotation().x(),
 									  base_ee_transform.getRotation().y(),
 									  base_ee_transform.getRotation().z(),
@@ -239,16 +239,31 @@ private:
 			goalPose.position.x=trans_baseCoord(0,0) + base_ee_transform.getOrigin().x();
 			goalPose.position.y=trans_baseCoord(1,0) + base_ee_transform.getOrigin().y();
 			goalPose.position.z=base_ee_transform.getOrigin().z();	
+			goalPose.orientation.x=base_ee_transform.getRotation().x();
+			goalPose.orientation.y=base_ee_transform.getRotation().y();
+			goalPose.orientation.z=base_ee_transform.getRotation().z();
+			goalPose.orientation.w=base_ee_transform.getRotation().w();
+			ROS_INFO_STREAM("goal pose in base coord after translation: "<<goalPose);
+			pub_trajectory.publish(goalPose);
+			ros::Duration(10).sleep();
+
+
+
+			// goalPose.position.x=base_ee_transform.getOrigin().x();
+			// goalPose.position.y=base_ee_transform.getOrigin().y();
+			// goalPose.position.z=base_ee_transform.getOrigin().z();	
 			goalPose.orientation.x=resultQ.x();
 			goalPose.orientation.y=resultQ.y();
 			goalPose.orientation.z=resultQ.z();
 			goalPose.orientation.w=resultQ.w();
 
 
-			// goalPose.orientation.x=base_ee_transform.getRotation().x();
-			// goalPose.orientation.y=base_ee_transform.getRotation().y();
-			// goalPose.orientation.z=base_ee_transform.getRotation().z();
-			// goalPose.orientation.w=base_ee_transform.getRotation().w();
+			ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
+			pub_trajectory.publish(goalPose);
+			ros::Duration(10).sleep();
+
+
+
 			ROS_INFO_STREAM("curr pose in base coord\n"
           << base_ee_transform.getOrigin().x() << "\n"
           << base_ee_transform.getOrigin().y() << "\n"
