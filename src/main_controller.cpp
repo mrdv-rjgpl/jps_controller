@@ -106,8 +106,8 @@ private:
 
 	void findImageCenter(const geometry_msgs::PoseStamped imagePose)
 	{
-		double x_gain = 1/1000.0;
-		double y_gain = 1/1000.0;
+		double x_gain = 1 / 10000.0;
+		double y_gain = 1 / 10000.0;
 
 		if(imagePose.pose.position.z<0.01)
 		{
