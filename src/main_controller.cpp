@@ -126,14 +126,59 @@ private:
 				listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
 			}
 			catch (tf::TransformException ex) {
-				ROS_ERROR("Not found");
+				ROS_ERROR("Not found base to ee");
 				ros::Duration(1.0).sleep();
 			}
 			geometry_msgs::Pose goalPose;
 			
+			tf::StampedTransform camera_ee_transform;
+			try
+			{
+				listener.waitForTransform("/ee_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
+				listener.lookupTransform("/ee_link", "/camera_link", ros::Time(0), camera_ee_transform);
+			}
+			catch (tf::TransformException ex) {
+				ROS_ERROR("Not found camera to base");
+				ros::Duration(1.0).sleep();
+			}
+
+			geometry_msgs::Pose temp;
+			temp.position.x=camera_ee_transform.getOrigin().x();
+			temp.position.y=camera_ee_transform.getOrigin().y();
+			temp.position.z=camera_ee_transform.getOrigin().z();
+			temp.orientation.x=camera_ee_transform.getOrigin().x();
+			temp.orientation.y=camera_ee_transform.getOrigin().y();
+			temp.orientation.z=camera_ee_transform.getOrigin().z();
+			temp.orientation.w=camera_ee_transform.getOrigin().w();
+
+
+			Eigen::Matrix<double,4,4> cam2ee = pose2frame(temp);
+			cam2ee(0,3)=0;cam2ee(1,3)=0;cam2ee(2,3)=0;
+			Eigen::Matrix<double,4,1> trans_camCoord(x_gain*imagePose.pose.position.x,y_gain*imagePose.pose.position.y, 0, 1);
+			Eigen::Matrix<double,4,1> trans_eeCoord = cam2ee * trans_camCoord;
+
+
+			temp.position.x=base_ee_transform.getOrigin().x();
+			temp.position.y=base_ee_transform.getOrigin().y();
+			temp.position.z=base_ee_transform.getOrigin().z();
+			temp.orientation.x=base_ee_transform.getOrigin().x();
+			temp.orientation.y=base_ee_transform.getOrigin().y();
+			temp.orientation.z=base_ee_transform.getOrigin().z();
+			temp.orientation.w=base_ee_transform.getOrigin().w();
+
+			Eigen::Matrix<double,4,4> ee2base = pose2frame(temp);
+			ee2base(0,3)=0;ee2base(1,3)=0;ee2base(2,3)=0;
+			Eigen::Matrix<double,4,1> trans_baseCoord = ee2base * trans_eeCoord;
+
+
+
+
+			
+
+
 			//we only want to move in x and y. everything else remains as is. 
-			goalPose.position.x=x_gain*imagePose.pose.position.x + base_ee_transform.getOrigin().x();
-			goalPose.position.y=y_gain*imagePose.pose.position.y + base_ee_transform.getOrigin().y();
+			goalPose.position.x=trans_baseCoord(0,0) + base_ee_transform.getOrigin().x();
+			goalPose.position.y=trans_baseCoord(1,0) + base_ee_transform.getOrigin().y();
 			goalPose.position.z=base_ee_transform.getOrigin().z();	
 			goalPose.orientation.x=base_ee_transform.getRotation().x();
 			goalPose.orientation.y=base_ee_transform.getRotation().y();
