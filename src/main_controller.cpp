@@ -92,12 +92,71 @@ private:
 
 	}
 
+
 	//get transform between ee and camera. After hand-eye cal. 
 	void setCameraPose()
 	{
 		// camframe=p;
 		// camframe.position.x=p.position.x;
 	}
+
+
+
+	
+
+	void findImageCenter(const geometry_msgs::PoseStamped imagePose)
+	{
+		// double x_gain = 0.1;
+		// double y_gain = 0.1;
+
+		double x_gain=imagePose.pose.position.z;
+		double y_gain=imagePose.pose.position.z;
+
+		if(imagePose.pose.position.z<0.01)
+		{
+			msg.data=true;
+			pub_moved.publish(msg);
+			ROS_INFO_STREAM("over center in cam coord  "<<imagePose.pose.position.z);
+		}
+
+		else
+		{
+			tf::StampedTransform base_ee_transform;
+			try
+			{
+				listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+				listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+			}
+			catch (tf::TransformException ex) {
+				ROS_ERROR("Not found");
+				ros::Duration(1.0).sleep();
+			}
+			geometry_msgs::Pose goalPose;
+			
+			//we only want to move in x and y. everything else remains as is. 
+			goalPose.position.x=x_gain*imagePose.pose.position.x;
+			goalPose.position.y=y_gain*imagePose.pose.position.y;
+			goalPose.position.z=base_ee_transform.getOrigin().z();	
+			goalPose.orientation.x=base_ee_transform.getRotation().x();
+			goalPose.orientation.y=base_ee_transform.getRotation().y();
+			goalPose.orientation.z=base_ee_transform.getRotation().z();
+			goalPose.orientation.w=base_ee_transform.getRotation().w();
+			pub_trajectory.publish(goalPose);
+			ros::Duration(10).sleep();
+
+			msg.data=false;
+			pub_moved.publish(msg);
+
+
+		}
+		// goalPose.x=x_gain*
+
+	}
+
+
+
+
+
 	//pose from base to puzzle
 	void puzzleSolver(const geometry_msgs::PoseStamped& puzzlePose)
 	{
@@ -186,8 +245,9 @@ public:
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
 		travelAcrossPlane();
-		sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-		
+		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
+		sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::findImageCenter, this);
+
 		pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
 
 	}
