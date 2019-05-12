@@ -44,7 +44,8 @@ private:
 	void travelAcrossPlane()
 	{
 	    ros::Duration(5).sleep();
-	    std::cout<<"in travel"<<std::endl;
+	    // std::cout<<"in travel"<<std::endl;
+	    ROS_INFO("in travel");
 		geometry_msgs::Pose pose;
 		pose.position.x=-0.0;
 		pose.position.y=0.430;
@@ -70,12 +71,14 @@ private:
 			// pose.position.x+=1/50.0;
 			{
 				pose.position.y+=3.0/100.0;
-				std::cout<<pose<<std::endl;
+				// std::cout<<pose<<std::endl;
+				ROS_INFO_STREAM(pose);
 				pub_trajectory.publish(pose);
 				ros::Duration(10).sleep();
 				pub_moved.publish(msg);
 				ros::Duration(2).sleep();
-				std::cout<<"pose executed"<<std::endl;
+				// std::cout<<"pose executed"<<std::endl;
+				ROS_INFO_STREAM("pose executed");
 			}
 			pose.position.x+=3.0/100.0;
 			pose.position.y=temp;
@@ -84,7 +87,8 @@ private:
 			pub_moved.publish(msg);
 			ros::Duration(2).sleep();		
 		}
-		std::cout<<"after everything"<<std::endl;
+		// std::cout<<"after everything"<<std::endl;
+		ROS_INFO_STREAM("after everything");
 
 	}
 
@@ -203,7 +207,7 @@ public:
 	Eigen::Matrix<double,3,3> quat2rotm(tf::Quaternion q)
   	{
 	    float qw=q.w(), qx=q.x(), qy=q.y(), qz=q.z();
-	    std::cout<<qx<<" "<<qy<<" "<<qz<<" "<<qw<<std::endl;
+	    // std::cout<<qx<<" "<<qy<<" "<<qz<<" "<<qw<<std::endl;
 	  	Eigen::Matrix<double,3,3> R;
 		R(0,0)=1-2*qy*qy-2*qz*qz;
 		R(0,1)=2*qx*qy-2*qz*qw;
