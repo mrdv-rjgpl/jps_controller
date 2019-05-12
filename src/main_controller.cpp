@@ -112,7 +112,7 @@ private:
 		if(imagePose.pose.position.z<0.01)
 		{
 			msg.data=true;
-			pub_moved.publish(msg);
+			//pub_moved.publish(msg);
 			ROS_INFO_STREAM("over center in cam coord  "<<imagePose.pose.position.z);
 		}
 
@@ -185,10 +185,11 @@ private:
 			goalPose.orientation.z=base_ee_transform.getRotation().z();
 			goalPose.orientation.w=base_ee_transform.getRotation().w();
 			ROS_INFO_STREAM("goal pose: "<<goalPose);
+      ros::Duration(3).sleep();
 			pub_trajectory.publish(goalPose);
 			ros::Duration(10).sleep();
 
-			msg.data=false;
+			msg.data=true;
 			pub_moved.publish(msg);
 
 

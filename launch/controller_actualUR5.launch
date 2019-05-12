@@ -17,8 +17,7 @@
 	<node
 		pkg="jps_traveler"
 		type="trajectory"
-		name="trajectory"
-		output="screen" >
+		name="trajectory">
 	</node>
 
 	<node
