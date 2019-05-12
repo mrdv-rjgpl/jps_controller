@@ -146,10 +146,10 @@ private:
 			temp.position.x=camera_ee_transform.getOrigin().x();
 			temp.position.y=camera_ee_transform.getOrigin().y();
 			temp.position.z=camera_ee_transform.getOrigin().z();
-			temp.orientation.x=camera_ee_transform.getOrigin().x();
-			temp.orientation.y=camera_ee_transform.getOrigin().y();
-			temp.orientation.z=camera_ee_transform.getOrigin().z();
-			temp.orientation.w=camera_ee_transform.getOrigin().w();
+			temp.orientation.x=camera_ee_transform.getRotation().x();
+			temp.orientation.y=camera_ee_transform.getRotation().y();
+			temp.orientation.z=camera_ee_transform.getRotation().z();
+			temp.orientation.w=camera_ee_transform.getRotation().w();
 
 
 			Eigen::Matrix<double,4,4> cam2ee = pose2frame(temp);
@@ -163,10 +163,10 @@ private:
 			temp.position.x=base_ee_transform.getOrigin().x();
 			temp.position.y=base_ee_transform.getOrigin().y();
 			temp.position.z=base_ee_transform.getOrigin().z();
-			temp.orientation.x=base_ee_transform.getOrigin().x();
-			temp.orientation.y=base_ee_transform.getOrigin().y();
-			temp.orientation.z=base_ee_transform.getOrigin().z();
-			temp.orientation.w=base_ee_transform.getOrigin().w();
+			temp.orientation.x=base_ee_transform.getRotation().x();
+			temp.orientation.y=base_ee_transform.getRotation().y();
+			temp.orientation.z=base_ee_transform.getRotation().z();
+			temp.orientation.w=base_ee_transform.getRotation().w();
 
 			Eigen::Matrix<double,4,4> ee2base = pose2frame(temp);
 			ee2base(0,3)=0;ee2base(1,3)=0;ee2base(2,3)=0;
