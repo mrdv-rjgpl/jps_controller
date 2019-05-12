@@ -109,11 +109,49 @@ private:
 		double x_gain = 1 / 10000.0;
 		double y_gain = 1 / 10000.0;
 
-		if(imagePose.pose.position.z<0.01)
+		if(imagePose.pose.position.z<2)
 		{
 			msg.data=true;
 			//pub_moved.publish(msg);
 			ROS_INFO_STREAM("over center in cam coord  "<<imagePose.pose.position.z);
+			tf::StampedTransform base_cam_transform;
+			try
+			{
+				listener.waitForTransform("/base_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
+				listener.lookupTransform("/base_link", "/camera_link", ros::Time(0), base_cam_transform);
+			}
+			catch (tf::TransformException ex) {
+				ROS_ERROR("Not found base to cam");
+				ros::Duration(1.0).sleep();
+			}
+
+			tf::StampedTransform base_ee_transform;
+			try
+			{
+				listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+				listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+			}
+			catch (tf::TransformException ex) {
+				ROS_ERROR("Not found base to ee");
+				ros::Duration(1.0).sleep();
+			}
+			geometry_msgs::Pose goalPose;
+			goalPose.position.x=base_cam_transform.getOrigin().x();
+			goalPose.position.y=base_cam_transform.getOrigin().y();
+			goalPose.position.z=base_cam_transform.getOrigin().z();
+			goalPose.orientation.x=base_ee_transform.getRotation().x();
+			goalPose.orientation.y=base_ee_transform.getRotation().y();
+			goalPose.orientation.z=base_ee_transform.getRotation().z();
+			goalPose.orientation.w=base_ee_transform.getRotation().w();
+
+			ROS_INFO_STREAM("sending to camera position"<<goalPose);
+			ros::Duration(3).sleep();
+
+
+			pub_trajectory.publish(goalPose);
+			ros::Duration(10).sleep();
+
+
 		}
 
 		else
@@ -209,6 +247,18 @@ private:
 
 	}
 
+	void getBaseToEE(tf::StampedTransform& base_ee_transform)
+	{
+		try
+		{
+			listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+			listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+		}
+		catch (tf::TransformException ex) {
+			ROS_ERROR("Not found base to ee");
+			ros::Duration(1.0).sleep();
+		}
+	}
 
 
 
