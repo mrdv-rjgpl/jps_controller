@@ -245,7 +245,7 @@ public:
 		pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
-		// travelAcrossPlane();
+		travelAcrossPlane();
 		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
 		sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
 

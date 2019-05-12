@@ -1,47 +1,48 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!--<arg name="model" default="$(find assignment1)/urdf/ur5_robot.urdf" />-->
-  <!--<param name="robot_description" textfile="$(arg model)" />-->
-<include file="$(find ur_gazebo)/launch/ur5_joint_limited.launch">
-    <arg name="gui" value="false"/>
-  </include>
-  
- <!--  <node
-      name="robot_state_publisher" 
-      pkg="robot_state_publisher" 
-      type="robot_state_publisher" 
-      output="screen" >
+	<!--<arg name="model" default="$(find assignment1)/urdf/ur5_robot.urdf" />-->
+	<!--<param name="robot_description" textfile="$(arg model)" />-->
+	<include file="$(find ur_gazebo)/launch/ur5_joint_limited.launch">
+		<arg name="gui" value="false"/>
+	</include>
+
+	<!--  <node
+	  name="robot_state_publisher" 
+	  pkg="robot_state_publisher" 
+	  type="robot_state_publisher" 
+	  output="screen" >
   </node> -->
-  
+
+	<include file="$(find jps_feature_matching)/launch/dyn_integ_test.launch" />
   <include file="$(find jps_traveler)/launch/viewer.launch"/>
 
   <node pkg="rqt_gui"
-	type="rqt_gui"
-	name="rqt_gui"
-	args="--perspective-file $(find jps_traveler)/traveler.perspective">
+	  type="rqt_gui"
+	  name="rqt_gui"
+	  args="--perspective-file $(find jps_traveler)/traveler.perspective">
   </node>
 
 
   <node 
-      pkg="jps_traveler" 
-      type="trajectory"
-      name="trajectory"  
-      output="screen" >
+	  pkg="jps_traveler" 
+	  type="trajectory"
+	  name="trajectory"  
+	  output="screen" >
   </node>
 
-    <node 
-      pkg="jps_controller" 
-      type="main_controller"
-      name="main_controller"  
-      output="screen" >
+  <node 
+	  pkg="jps_controller" 
+	  type="main_controller"
+	  name="main_controller"  
+	  output="screen" >
   </node>
-  
- <!--  <node
-      name="rviz" 
-      pkg="rviz"
-      type="rviz"
-      args="-d $(find traveler)/assignment1.rviz" required="true" >
+
+  <!--  <node
+	  name="rviz" 
+	  pkg="rviz"
+	  type="rviz"
+	  args="-d $(find traveler)/assignment1.rviz" required="true" >
   </node> -->
-  
+
 </launch>
