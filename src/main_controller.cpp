@@ -64,29 +64,29 @@ private:
 		pub_trajectory.publish(pose);
 		ros::Duration(10).sleep();
 		pub_moved.publish(msg);
-		ros::Duration(2).sleep();
-		for(int i=1;i<=5;i++)
-		{
-			for(int j=1;j<=5;j++)
-			// pose.position.x+=1/50.0;
-			{
-				pose.position.y+=3.0/100.0;
-				// std::cout<<pose<<std::endl;
-				ROS_INFO_STREAM(pose);
-				pub_trajectory.publish(pose);
-				ros::Duration(10).sleep();
-				pub_moved.publish(msg);
-				ros::Duration(2).sleep();
-				// std::cout<<"pose executed"<<std::endl;
-				ROS_INFO_STREAM("pose executed");
-			}
-			pose.position.x+=3.0/100.0;
-			pose.position.y=temp;
-			pub_trajectory.publish(pose);
-			ros::Duration(10).sleep();	
-			pub_moved.publish(msg);
-			ros::Duration(2).sleep();		
-		}
+		// ros::Duration(2).sleep();
+		// for(int i=1;i<=5;i++)
+		// {
+		// 	for(int j=1;j<=5;j++)
+		// 	// pose.position.x+=1/50.0;
+		// 	{
+		// 		pose.position.y+=3.0/100.0;
+		// 		// std::cout<<pose<<std::endl;
+		// 		ROS_INFO_STREAM(pose);
+		// 		pub_trajectory.publish(pose);
+		// 		ros::Duration(10).sleep();
+		// 		pub_moved.publish(msg);
+		// 		ros::Duration(2).sleep();
+		// 		// std::cout<<"pose executed"<<std::endl;
+		// 		ROS_INFO_STREAM("pose executed");
+		// 	}
+		// 	pose.position.x+=3.0/100.0;
+		// 	pose.position.y=temp;
+		// 	pub_trajectory.publish(pose);
+		// 	ros::Duration(10).sleep();	
+		// 	pub_moved.publish(msg);
+		// 	ros::Duration(2).sleep();		
+		// }
 		// std::cout<<"after everything"<<std::endl;
 		ROS_INFO_STREAM("after everything");
 
@@ -102,7 +102,7 @@ private:
 
 
 
-	
+
 
 	void findImageCenter(const geometry_msgs::PoseStamped imagePose)
 	{
@@ -121,6 +121,7 @@ private:
 
 		else
 		{
+			ROS_INFO_STREAM("not over camera");
 			tf::StampedTransform base_ee_transform;
 			try
 			{
@@ -244,9 +245,9 @@ public:
 		pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
-		travelAcrossPlane();
+		// travelAcrossPlane();
 		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-		sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::findImageCenter, this);
+		sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
 
 		pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
 
