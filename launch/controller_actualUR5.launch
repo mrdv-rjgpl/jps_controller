@@ -12,7 +12,7 @@
 		<arg name="robot_ip" value="172.22.22.2"/>
 	</include>
 
-	<include file="$(find jps_triangulation)/launch/dyn_integ_test.launch" />
+	<include file="$(find jps_feature_matching)/launch/dyn_integ_test.launch" />
 	<include file="$(find jps_traveler)/launch/viewer.launch" />
 	<node
 		pkg="jps_traveler"
