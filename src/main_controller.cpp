@@ -46,13 +46,13 @@ private:
 	    ros::Duration(5).sleep();
 	    std::cout<<"in travel"<<std::endl;
 		geometry_msgs::Pose pose;
-		pose.position.x=0.266;
-		pose.position.y=0.422;
-		pose.position.z=0.432;
-		pose.orientation.x=-0.271;
-		pose.orientation.y=0.653;
-		pose.orientation.z=0.272;
-		pose.orientation.w=0.653;
+		pose.position.x=-0.0;
+		pose.position.y=0.430;
+		pose.position.z=0.315;
+		pose.orientation.x=-0.608;
+		pose.orientation.y=0.333;
+		pose.orientation.z=0.625;
+		pose.orientation.w=0.359;
 		home=pose;
 		double temp=pose.position.y;
 
@@ -69,7 +69,7 @@ private:
 			for(int j=1;j<=5;j++)
 			// pose.position.x+=1/50.0;
 			{
-				pose.position.y+=1.5/50.0;
+				pose.position.y+=3.0/100.0;
 				std::cout<<pose<<std::endl;
 				pub_trajectory.publish(pose);
 				ros::Duration(10).sleep();
@@ -77,7 +77,7 @@ private:
 				ros::Duration(2).sleep();
 				std::cout<<"pose executed"<<std::endl;
 			}
-			pose.position.x-=1.5/50;
+			pose.position.x+=3.0/100.0;
 			pose.position.y=temp;
 			pub_trajectory.publish(pose);
 			ros::Duration(10).sleep();	
