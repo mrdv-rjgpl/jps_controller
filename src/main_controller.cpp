@@ -113,7 +113,7 @@ private:
 		double theta=2*atan2(imagePose.pose.orientation.z,imagePose.pose.orientation.w);
 
 
-		if(imagePose.pose.position.z<2)
+		if(imagePose.pose.position.z<2 && theta<0.05)
 		{
 			msg.data=true;
 			//pub_moved.publish(msg);
