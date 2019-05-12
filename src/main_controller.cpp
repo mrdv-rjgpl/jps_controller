@@ -157,6 +157,8 @@ private:
 			Eigen::Matrix<double,4,1> trans_camCoord(x_gain*imagePose.pose.position.x,y_gain*imagePose.pose.position.y, 0, 1);
 			Eigen::Matrix<double,4,1> trans_eeCoord = cam2ee * trans_camCoord;
 
+			ROS_INFO_STREAM("translation in cam coord" << trans_camCoord);
+			ROS_INFO_STREAM("translation in ee coord" << trans_eeCoord);
 
 			temp.position.x=base_ee_transform.getOrigin().x();
 			temp.position.y=base_ee_transform.getOrigin().y();
@@ -171,6 +173,7 @@ private:
 			Eigen::Matrix<double,4,1> trans_baseCoord = ee2base * trans_eeCoord;
 
 
+			ROS_INFO_STREAM("translation in base coord" << trans_baseCoord);
 
 
 			
@@ -184,7 +187,8 @@ private:
 			goalPose.orientation.y=base_ee_transform.getRotation().y();
 			goalPose.orientation.z=base_ee_transform.getRotation().z();
 			goalPose.orientation.w=base_ee_transform.getRotation().w();
-			ROS_INFO_STREAM("goal pose: "<<goalPose);
+			// ROS_INFO_STREAM("curr pose in base coord"<<base_ee_transform);
+			ROS_INFO_STREAM("goal pose in base coord: "<<goalPose);
 			pub_trajectory.publish(goalPose);
 			ros::Duration(10).sleep();
 
