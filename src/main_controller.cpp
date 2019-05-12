@@ -232,7 +232,15 @@ private:
 		    resultQ.vec() = q_x.w() * q_curr.vec() + q_curr.w() * q_x.vec() 
 		    + q_x.vec().cross(q_curr.vec());
 
-			
+			if(resultQ.w()<0)
+			{
+				resultQ.w()*=-1;
+				resultQ.x()*=-1;
+				resultQ.y()*=-1;
+				resultQ.z()*=-1;
+			}
+			resultQ.normalize();
+
 
 
 			//we only want to move in x and y. everything else remains as is. 
