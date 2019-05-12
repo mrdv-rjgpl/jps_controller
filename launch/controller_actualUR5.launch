@@ -1,32 +1,31 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="limited" default="false"/>
-  <arg name="paused" default="false"/>
-  <arg name="gui" default="false"/>
-  
-  <!-- startup simulated world -->
- <param name="/ur_driver/prevent_programming" value="true"/>
-  
-  <include file="$(find ur_modern_driver)/launch/ur5_bringup_compatible.launch">
-    <arg name="robot_ip" value="172.22.22.2"/>
-  </include>
-  
-  <include file="$(find jps_traveler)/launch/viewer.launch"/>
-  <node 
-      pkg="jps_traveler" 
-      type="trajectory"
-      name="trajectory"  
-      output="screen" >
-  </node>
+	<arg name="limited" default="false"/>
+	<arg name="paused" default="false"/>
+	<arg name="gui" default="false"/>
 
-    <node 
-      pkg="jps_controller" 
-      type="main_controller"
-      name="main_controller"  
-      output="screen" >
-  </node>
-  
+	<!-- startup simulated world -->
+	<param name="/ur_driver/prevent_programming" value="true"/>
 
-  
+	<include file="$(find ur_modern_driver)/launch/ur5_bringup_compatible.launch">
+		<arg name="robot_ip" value="172.22.22.2"/>
+	</include>
+
+	<include file="$(find jps_triangulation)/launch/dyn_integ_test.launch" />
+	<include file="$(find jps_traveler)/launch/viewer.launch" />
+	<node
+		pkg="jps_traveler"
+		type="trajectory"
+		name="trajectory"
+		output="screen" >
+	</node>
+
+	<node
+		pkg="jps_controller"
+		type="main_controller"
+		name="main_controller"
+		output="screen" >
+	</node>
+
 </launch>
