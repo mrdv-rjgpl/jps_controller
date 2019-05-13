@@ -17,7 +17,7 @@
 #include <std_msgs/Bool.h>
 #include <jps_traveler/MotionWithTime.h>
 
-class main_controller
+class MainController
 {
 private:
   ros::NodeHandle nh;
@@ -334,66 +334,73 @@ private:
 
   void travel(void)
   {
+    double ee_distance;
+    jps_traveler::MotionWithTime msg;
+    tf::StampedTransform base_ee_transform;
+
     // TODO: Move EE to next pose in list
     // TODO: Increment pose counter.
     if(this->robot_pose_index < 16)
     {
-      jps_traveler::MotionWithTime msg;
-      msg.pose = this->travel_pose;
-      msg.sec = 4;
-      pub_trajectory.publish(msg);
-      ros::Duration(msg.sec + 2).sleep(); // TODO: Remove this, as the timer will take care of it.
-      this->robot_pose_index++;
+      try
+      {
+        this->listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+        this->listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
 
-      if(this->robot_pose_index % 4 == 0)
-      {
-        this->travel_pose.position.x += this->robot_delta_x;
-        this->robot_delta_y *= -1.0;
+        msg.pose = this->travel_pose;
+        ee_distance = sqrt(
+          (this->travel_pose.position.x - base_ee_transform.getOrigin().x()) * (this->travel_pose.position.x - base_ee_transform.getOrigin().x())
+          + (this->travel_pose.position.y - base_ee_transform.getOrigin().y()) * (this->travel_pose.position.y - base_ee_transform.getOrigin().y())
+          + (this->travel_pose.position.z - base_ee_transform.getOrigin().z()) * (this->travel_pose.position.z - base_ee_transform.getOrigin().z()));
+
+        // ROS_INFO_STREAM("Distance to be traveled: " << ee_distance);
+
+        // Limit the speed to 5 cm/s if the distance to be traveled is more than 10 cm.
+        if(ee_distance < 0.1)
+        {
+          msg.sec = 2;
+        }
+        else
+        {
+          msg.sec = ee_distance / 0.05;
+        }
+
+        pub_trajectory.publish(msg);
+
+        if(msg.sec > 2)
+        {
+          ros::Duration(msg.sec + 2).sleep();
+        }
+        else
+        {
+          // No operation
+        }
+
+        this->robot_pose_index++;
+
+        if(this->robot_pose_index % 4 == 0)
+        {
+          this->travel_pose.position.x += this->robot_delta_x;
+          this->robot_delta_y *= -1.0;
+        }
+        else
+        {
+          this->travel_pose.position.y += this->robot_delta_y;
+        }
       }
-      else
+      catch (tf::TransformException &ex)
       {
-        this->travel_pose.position.y += this->robot_delta_y;
+        ROS_ERROR_STREAM(ex.what());
       }
     }
     else
     {
       // No operation
     }
-
-//    if (j < 4)
-//    {
-//      this->travel_pose.position.y += delta_y;
-//      i++;
-//      jps_traveler::MotionWithTime m;
-//      m.pose = this->travel_pose;
-//      m.sec = 6;
-//      pub_trajectory.publish(m);
-//      ros::Duration(m.sec + 2).sleep();
-//
-//      if (i == 4)
-//      {
-//        this->travel_pose.position.x += 3.0 / 100.0;
-//        delta_y *= -1.0;
-//        i = 0;
-//        j++;
-//        m.this->travel_pose = this->travel_pose;
-//        m.sec = 2;
-//        pub_trajectory.publish(m);
-//        ros::Duration(m.sec + 2).sleep();
-//      }
-//      else
-//      {
-//        // No operation
-//      }
-//    }
-//    else
-//    {
-//      ROS_INFO_STREAM("out of workspace");
-//    }
   }
 
 public:
-  main_controller(ros::NodeHandle& nh) : nh(nh)
+  MainController(ros::NodeHandle& nh) : nh(nh)
   {
     this->num_pieces_placed = 0;
     this->piece_gripped = false;
@@ -425,12 +432,12 @@ public:
     sendToHome();
 
     pub_moved = nh.advertise<std_msgs::Bool>("/moved", 1);
-    // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
+    // sub_cameraCal=nh.subscribe("/camerapose", 1, &MainController::setCameraPose, this);
     // setCameraPose();
     // travelAcrossPlane();
-    // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-    sub_puzzlePiece = nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::getSurfData, this);
-    timer = nh.createTimer(ros::Duration(4.0), &main_controller::runRobot, this);
+    // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &MainController::puzzleSolver, this);
+    sub_puzzlePiece = nh.subscribe("/feature_matcher/homographic_transform", 1, &MainController::getSurfData, this);
+    timer = nh.createTimer(ros::Duration(4.0), &MainController::runRobot, this);
     pub_gripper = nh.advertise<std_msgs::UInt16>("/servo", 1);
     // pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
   }
@@ -490,7 +497,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "main_controller");
   ros::NodeHandle nh;
-  main_controller maincontrol(nh);
+  MainController maincontrol(nh);
   ros::spin();
   return 0;
 }
@@ -514,7 +521,7 @@ int main(int argc, char** argv)
 // #include<std_msgs/Bool.h>
 // #include<jps_traveler/MotionWithTime.h>
 
-// class main_controller{
+// class MainController{
 //   private:
 //     ros::NodeHandle nh;
 //     // ros::Subscriber sub_cameraCal;
@@ -908,7 +915,7 @@ int main(int argc, char** argv)
 //     }
 
 //   public:
-//     main_controller(ros::NodeHandle& nh): nh(nh)
+//     MainController(ros::NodeHandle& nh): nh(nh)
 //   {
 //       gripper_offset=84.3/1000.0;
 //       table_offset=0.1;
@@ -919,11 +926,11 @@ int main(int argc, char** argv)
 //       msg.data=true;
 //       pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
 //       pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
-//       // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
+//       // sub_cameraCal=nh.subscribe("/camerapose", 1, &MainController::setCameraPose, this);
 //       setCameraPose();
 //       travelAcrossPlane();
-//       // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-//       sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter,
+//       // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &MainController::puzzleSolver, this);
+//       sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &MainController::findImageCenter,
 //       this);
 
 //       // pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
@@ -987,7 +994,7 @@ int main(int argc, char** argv)
 // {
 //   ros::init(argc, argv, "main_controller");
 //   ros::NodeHandle nh;
-//   main_controller maincontrol (nh) ;
+//   MainController maincontrol (nh) ;
 //   ros::spin();
 //   return 0;
 // }
