@@ -384,8 +384,9 @@ public:
       z_distance=0.3;
       stepsize=0.1;
       msg.data=true;
-      sendToHome();
       pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
+	  sendToHome();
+
       pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
       // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
       // setCameraPose();
