@@ -104,10 +104,6 @@ class main_controller{
       // camframe.position.x=p.position.x;
     }
 
-
-
-
-
     void findImageCenter(const geometry_msgs::PoseStamped imagePose)
     {
       double x_gain = 1.0 / 10000.0;
@@ -120,9 +116,11 @@ class main_controller{
       if(imagePose.pose.position.z < 2 && theta < 0.05 && theta > -0.05)
       {
         msg.data=true;
+
         //pub_moved.publish(msg);
         ROS_INFO_STREAM("over center in cam coord  "<<imagePose.pose.position.z);
         tf::StampedTransform base_cam_transform;
+
         try
         {
           listener.waitForTransform("/base_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
@@ -134,6 +132,7 @@ class main_controller{
         }
 
         tf::StampedTransform base_ee_transform;
+
         try
         {
           listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
@@ -167,11 +166,7 @@ class main_controller{
         ros::Duration(3).sleep();
         pub_trajectory.publish(m);
         ros::Duration(m.sec+2).sleep();
-
-
-
       }
-
       else
       {
         ROS_INFO_STREAM("not over camera");
@@ -292,6 +287,7 @@ class main_controller{
         goalPose.orientation.z=resultQ.z();
         goalPose.orientation.w=resultQ.w();
 
+        /*
         ROS_INFO_STREAM("Initial quaternion: ["
             << q_curr.x() << ", "
             << q_curr.y() << ", "
@@ -306,15 +302,13 @@ class main_controller{
             << resultQ.x() << ", "
             << resultQ.y() << ", "
             << resultQ.z() << ", "
-            << resultQ.w() << "]");
+            << resultQ.w() << "]"); */
 
         ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
         m.pose=goalPose;
 
         pub_trajectory.publish(m);
         ros::Duration(10).sleep();
-
-
 
         ROS_INFO_STREAM("curr pose in base coord\n"
             << base_ee_transform.getOrigin().x() << "\n"
@@ -331,8 +325,6 @@ class main_controller{
 
         msg.data=true;
         pub_moved.publish(msg);
-
-
       }
       // goalPose.x=x_gain*
 
@@ -351,16 +343,12 @@ class main_controller{
       }
     }
 
-
-
-
     //pose from base to puzzle
     void puzzleSolver(const geometry_msgs::PoseStamped& puzzlePose)
     {
       //frames base2puzzle, base2ee, ee2camera, camera2puzzle. base -> base_link
       Eigen::Matrix<double,4,4> F_bp, F_be, F_ec, F_cp;
       //gripper offset
-
 
       F_bp=pose2frame(puzzlePose.pose);
       // F_ec=pose2frame(camframe);
@@ -429,7 +417,8 @@ class main_controller{
     }
 
   public:
-    main_controller(ros::NodeHandle& nh): nh(nh){
+    main_controller(ros::NodeHandle& nh): nh(nh)
+  {
       gripper_offset=84.3/1000.0;
       table_offset=0.1;
       angle_grip.data=150;
