@@ -161,6 +161,14 @@ private:
 			pub_trajectory.publish(m);
 			ros::Duration(m.sec+2).sleep();
 
+			goalPose.position.z=0.200;
+			m.pose=goalPose;
+			ROS_INFO_STREAM("sending to puzzle position"<<goalPose);
+			ros::Duration(3).sleep();
+			pub_trajectory.publish(m);
+			ros::Duration(m.sec+2).sleep();
+
+
 
 		}
 
