@@ -21,22 +21,24 @@ private:
   ros::Subscriber sub_puzzlePiece;
   ros::Publisher pub_trajectory;
   ros::Publisher pub_gripper;
-  ros::Publisher pub_moved;
 
   ros::Timer timer;
   int num_pieces_placed;
   bool piece_gripped;
   bool piece_centered;
   bool piece_in_frame;
+  double ground_z;
   tf::TransformListener listener;
 
   // constants needed
   geometry_msgs::PoseStamped image_pose;
   geometry_msgs::Pose home;
   geometry_msgs::Pose travel_pose;
+  geometry_msgs::Pose piece_goal_poses[4];
   double robot_delta_x;
   double robot_delta_y;
   int robot_pose_index;
+  int piece_index;
   double gripper_offset;
   double table_offset;
   std_msgs::UInt16 angle_grip;
@@ -68,7 +70,7 @@ private:
     else if (this->piece_gripped)
     {
       ROS_INFO("Placing piece...\n");
-      // this->placePiece();
+      //this->placePiece();
     }
     else if (this->piece_centered)
     {
@@ -93,15 +95,53 @@ private:
   {
     image_pose = p;
     this->piece_in_frame = true;
+    sscanf(p.header.frame_id.c_str(), "%d", &piece_index);
     ROS_INFO("Piece found in frame during image callback.\n");
   }
 
   void placePiece(void)
   {
-    // TODO: Move the EE to a pre-programmed position based on the piece index.
-    // TODO: Deactivate the vacuum gripper
+    tf::StampedTransform base_ee_transform;
+    jps_traveler::MotionWithTime msg;
+    geometry_msgs::Pose goal_pose;
+
+    if(this->piece_index >= 0)
+    {
+      // TODO: Move the EE to a pre-programmed position based on the piece index.
+      try
+      {
+        listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+        listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+        goal_pose = this->piece_goal_poses[this->piece_index];
+        msg.pose = goal_pose;
+        msg.sec = 6;
+        pub_trajectory.publish(msg);
+        ros::Duration(m.sec + 2).sleep();
+      }
+      catch (tf::TransformException &ex)
+      {
+        ROS_ERROR_STREAM(ex.what());
+      }
+    }
+    else
+    {
+      ROS_ERROR_STREAM("Invalid piece index: " << this->piece_index);
+    }
+
+    // Deactivate the vacuum gripper
+    this->pub_gripper.publish(angle_ungrip);
+    ros::Duration(2).sleep();
     this->piece_gripped = false;
-    ++this->num_pieces_placed;
+
+    if(this->piece_index >= 0)
+    {
+      this->num_pieces_placed++;
+      this->piece_index = -1;
+    }
+    else
+    {
+      // No operation
+    }
   }
 
   void pickPiece(void)
@@ -126,8 +166,8 @@ private:
       listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
 
-      goal_pose.position.x = base_cam_transform.getOrigin().x();
-      goal_pose.position.y = base_cam_transform.getOrigin().y();
+      goal_pose.position.x = base_cam_transform.getOrigin().x() + 0.006;
+      goal_pose.position.y = base_cam_transform.getOrigin().y() - 0.002;
       goal_pose.position.z = base_cam_transform.getOrigin().z();
       goal_pose.orientation.x = base_ee_transform.getRotation().x();
       goal_pose.orientation.y = base_ee_transform.getRotation().y();
@@ -140,13 +180,11 @@ private:
       pub_trajectory.publish(msg);
       ros::Duration(msg.sec + 2).sleep();
 
-      goal_pose.position.x += 0.003;
-      goal_pose.position.y -= 0.003;
-      goal_pose.position.z = 0.199;
+      goal_pose.position.z = this->ground_z;
       msg.pose = goal_pose;
       ROS_INFO_STREAM("Translating EE to puzzle centroid\n" << goal_pose);
       pub_trajectory.publish(msg);
-      msg.sec = 8;
+      msg.sec = 5;
       ros::Duration(msg.sec + 2).sleep();
 
       ROS_INFO_STREAM("Gripping puzzle piece...");
@@ -371,10 +409,13 @@ private:
 public:
   MainController(ros::NodeHandle& nh) : nh(nh)
   {
+    int i;
+
     this->num_pieces_placed = 0;
     this->piece_gripped = false;
     this->piece_centered = false;
     this->piece_in_frame = false;
+    this->piece_index = -1;
     this->robot_pose_index = 0;
     this->robot_delta_x = 3.0 / 100.0;
     this->robot_delta_y = 3.0 / 100.0;
@@ -383,12 +424,31 @@ public:
     this->home.position.x = -0.0;
     this->home.position.y = 0.430;
     this->home.position.z = 0.315;
-    this->home.orientation.x = -0.608;
-    this->home.orientation.y = 0.333;
-    this->home.orientation.z = 0.625;
-    this->home.orientation.w = 0.359;
+    this->home.orientation.x = -0.616;
+    this->home.orientation.y = 0.344;
+    this->home.orientation.z = 0.619;
+    this->home.orientation.w = 0.346;
 
     this->travel_pose = this->home;
+    this->ground_z = 0.197;
+
+    for(i = 0; i < 4; ++i)
+    {
+      this->piece_goal_poses[i].position.z = this->home.position.z;
+      this->piece_goal_poses[i].orientation.x = -0.013;
+      this->piece_goal_poses[i].orientation.y = 0.710;
+      this->piece_goal_poses[i].orientation.z = 0.014;
+      this->piece_goal_poses[i].orientation.w = 0.704;
+    }
+
+    this->piece_goal_poses[0].position.x = 0.376;
+    this->piece_goal_poses[0].position.y = 0.436;
+    this->piece_goal_poses[1].position.x = 0.376;
+    this->piece_goal_poses[1].position.y = 0.436;
+    this->piece_goal_poses[2].position.x = 0.376;
+    this->piece_goal_poses[2].position.y = 0.436;
+    this->piece_goal_poses[3].position.x = 0.376;
+    this->piece_goal_poses[3].position.y = 0.436;
 
     gripper_offset = 84.3 / 1000.0;
     table_offset = 0.1;
@@ -400,21 +460,20 @@ public:
     pub_trajectory = nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
     this->sendToHome();
 
-    pub_moved = nh.advertise<std_msgs::Bool>("/moved", 1);
-    // sub_cameraCal=nh.subscribe("/camerapose", 1, &MainController::setCameraPose, this);
-    // setCameraPose();
-    // travelAcrossPlane();
-    // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &MainController::puzzleSolver, this);
+    ROS_INFO("Initializing publisher for gripper...");
+    this->pub_gripper = this->nh.advertise<std_msgs::UInt16>("/servo", 1);
+    ros::Duration(5).sleep();
+    ROS_INFO("Opening gripper...");
+    this->pub_gripper.publish(angle_ungrip);
+    ros::Duration(2).sleep();
     ROS_INFO("Initializing SURF feature subscriber...");
-    sub_puzzlePiece = nh.subscribe(
+    sub_puzzlePiece = this->nh.subscribe(
         "/feature_matcher/homographic_transform",
         1,
         &MainController::getSurfData,
         this);
     ROS_INFO("Initializing timer...");
-    timer = nh.createTimer(ros::Duration(4.0), &MainController::runRobot, this);
-    pub_gripper = nh.advertise<std_msgs::UInt16>("/servo", 1);
-    pub_gripper.publish(angle_ungrip);
+    timer = this->nh.createTimer(ros::Duration(4.0), &MainController::runRobot, this);
   }
 
   Eigen::Matrix<double, 4, 4> transformToMatrix(tf::StampedTransform t)
@@ -515,7 +574,6 @@ int main(int argc, char** argv)
 //     ros::Subscriber sub_puzzlePiece;
 //     ros::Publisher pub_trajectory;
 //     ros::Publisher pub_gripper;
-//     ros::Publisher pub_moved;
 
 //     tf::TransformListener listener;
 
@@ -555,7 +613,6 @@ int main(int argc, char** argv)
 //       m.sec=6;
 //       pub_trajectory.publish(m);
 //       ros::Duration(m.sec+2).sleep();
-//       pub_moved.publish(msg);
 //       // ros::Duration(2).sleep();
 //       // for(int i=1;i<=5;i++)
 //       // {
@@ -567,7 +624,6 @@ int main(int argc, char** argv)
 //       // 		ROS_INFO_STREAM(pose);
 //       // 		pub_trajectory.publish(pose);
 //       // 		ros::Duration(10).sleep();
-//       // 		pub_moved.publish(msg);
 //       // 		ros::Duration(2).sleep();
 //       // 		// std::cout<<"pose executed"<<std::endl;
 //       // 		ROS_INFO_STREAM("pose executed");
@@ -576,7 +632,6 @@ int main(int argc, char** argv)
 //       // 	pose.position.y=temp;
 //       // 	pub_trajectory.publish(pose);
 //       // 	ros::Duration(10).sleep();
-//       // 	pub_moved.publish(msg);
 //       // 	ros::Duration(2).sleep();
 //       // }
 //       // std::cout<<"after everything"<<std::endl;
@@ -604,7 +659,6 @@ int main(int argc, char** argv)
 //       {
 //         msg.data=true;
 
-//         //pub_moved.publish(msg);
 //         ROS_INFO_STREAM("over center in cam coord  "<<image_pose.pose.position.z);
 //         tf::StampedTransform base_cam_transform;
 
@@ -811,7 +865,6 @@ int main(int argc, char** argv)
 //         // ros::Duration(10).sleep();
 
 //         msg.data=true;
-//         pub_moved.publish(msg);
 //       }
 //       // goalPose.x=x_gain*
 
@@ -912,7 +965,6 @@ int main(int argc, char** argv)
 //       stepsize=0.1;
 //       msg.data=true;
 //       pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
-//       pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
 //       // sub_cameraCal=nh.subscribe("/camerapose", 1, &MainController::setCameraPose, this);
 //       setCameraPose();
 //       travelAcrossPlane();
