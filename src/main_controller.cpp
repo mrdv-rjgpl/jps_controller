@@ -96,7 +96,7 @@ private:
     image_pose = p;
     this->piece_in_frame = true;
     sscanf(p.header.frame_id.c_str(), "%d", &piece_index);
-    ROS_INFO("Piece found in frame during image callback.\n");
+    ROS_INFO_STREAM("Piece " << this->piece_index << " found in frame during image callback.\n");
   }
 
   void placePiece(void)
@@ -346,6 +346,7 @@ private:
 
     // Reset the piece in frame boolean, as after this movement,
     // it may no longer be true.
+    this->piece_in_frame = false;
   }
 
   void travel(void)
@@ -354,7 +355,7 @@ private:
     jps_traveler::MotionWithTime msg;
     tf::StampedTransform base_ee_transform;
 
-    if(this->robot_pose_index < 16)
+    if(this->robot_pose_index < 36)
     {
       try
       {
@@ -393,7 +394,7 @@ private:
         // Increment pose counter and update next travel pose.
         this->robot_pose_index++;
 
-        if(this->robot_pose_index % 4 == 0)
+        if(this->robot_pose_index % 6 == 0)
         {
           this->travel_pose.position.x += this->robot_delta_x;
           this->robot_delta_y *= -1.0;
@@ -429,7 +430,7 @@ public:
     this->robot_delta_y = 3.0 / 100.0;
 
     // Initialize robot home and initial travel pose.
-    this->home.position.x = -0.0;
+    this->home.position.x = -0.05;
     this->home.position.y = 0.430;
     this->home.position.z = 0.315;
     this->home.orientation.x = -0.616;
@@ -438,7 +439,7 @@ public:
     this->home.orientation.w = 0.346;
 
     this->travel_pose = this->home;
-    this->ground_z = 0.197;
+    this->ground_z = 0.195;
 
     for(i = 0; i < 4; ++i)
     {
@@ -451,8 +452,8 @@ public:
 
     this->piece_goal_poses[0].position.x = 0.376;
     this->piece_goal_poses[0].position.y = 0.436;
-    this->piece_goal_poses[1].position.x = 0.376;
-    this->piece_goal_poses[1].position.y = 0.436;
+    this->piece_goal_poses[1].position.x = 0.328;
+    this->piece_goal_poses[1].position.y = 0.381;
     this->piece_goal_poses[2].position.x = 0.376;
     this->piece_goal_poses[2].position.y = 0.436;
     this->piece_goal_poses[3].position.x = 0.376;
