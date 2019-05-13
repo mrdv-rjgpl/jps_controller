@@ -23,6 +23,7 @@ class main_controller{
     ros::NodeHandle nh;
     // ros::Subscriber sub_cameraCal;
     ros::Subscriber sub_puzzlePiece;
+		ros::ServiceClient piece_transform_client;
     ros::Publisher pub_trajectory;
     ros::Publisher pub_gripper;
     ros::Publisher pub_moved;
@@ -433,6 +434,7 @@ class main_controller{
       travelAcrossPlane();
       // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
       sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
+      this->piece_transform_client = n.serviceClient<jps_feature_matching::FindPieceTransform>("find_piece_transform");
 
       // pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
       pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
