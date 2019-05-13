@@ -93,7 +93,7 @@ private:
 	}
 
 
-	//get transform between ee and camera. After hand-eye cal. 
+	//get transform between ee and camera. After hand-eye cal.
 	void setCameraPose()
 	{
 		// camframe=p;
@@ -106,15 +106,14 @@ private:
 
 	void findImageCenter(const geometry_msgs::PoseStamped imagePose)
 	{
-		double x_gain = 1 / 10000.0;
-		double y_gain = 1 / 10000.0;
-		double theta_gain = 1/20.0;
+		double x_gain = 1.0 / 10000.0;
+		double y_gain = 1.0 / 10000.0;
+		double theta_gain = 0.9;
 
-		double theta=2*atan2(imagePose.pose.orientation.z,imagePose.pose.orientation.w);
+		double theta = -2.0 * atan2(imagePose.pose.orientation.z, imagePose.pose.orientation.w);
     ROS_INFO_STREAM("Obtained differential angle of " << theta);
 
-
-		if(imagePose.pose.position.z<2 && theta<0.05)
+		if(imagePose.pose.position.z < 2 && theta < 0.05 && theta > -0.05)
 		{
 			msg.data=true;
 			//pub_moved.publish(msg);
@@ -218,13 +217,21 @@ private:
 
 			ROS_INFO_STREAM("translation in base coord\n" << trans_baseCoord);
 
-			theta*=theta_gain;
+			theta *= theta_gain;
 
-			Eigen::Quaterniond q_x(sin(theta/2), 0, 0, cos(theta/2));
-			Eigen::Quaterniond q_curr(base_ee_transform.getRotation().x(),
+      if(theta >= 0.174)
+      {
+        theta = 0.174;
+      }
+      else if(theta <= -0.174)
+      {
+        theta = -0.174;
+      }
+
+			Eigen::Quaterniond q_x(cos(theta/2), 0, 0, sin(theta/2));
+			Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), base_ee_transform.getRotation().x(),
 									  base_ee_transform.getRotation().y(),
-									  base_ee_transform.getRotation().z(),
-									  base_ee_transform.getRotation().w());
+									  base_ee_transform.getRotation().z());
 
 			Eigen::Quaterniond resultQ;
 		    resultQ.setIdentity();
@@ -267,7 +274,17 @@ private:
 			goalPose.orientation.z=resultQ.z();
 			goalPose.orientation.w=resultQ.w();
 
-      ROS_INFO_STREAM("Quaternion to be rotated by: ["
+      ROS_INFO_STREAM("Initial quaternion: ["
+          << q_curr.x() << ", "
+          << q_curr.y() << ", "
+          << q_curr.z() << ", "
+          << q_curr.w() << "]");
+      ROS_INFO_STREAM("Multiplied quaternion: ["
+          << q_x.x() << ", "
+          << q_x.y() << ", "
+          << q_x.z() << ", "
+          << q_x.w() << "]");
+      ROS_INFO_STREAM("Final quaternion: ["
           << resultQ.x() << ", "
           << resultQ.y() << ", "
           << resultQ.z() << ", "
