@@ -14,6 +14,7 @@
 
 	<include file="$(find jps_feature_matching)/launch/dyn_integ_test.launch" />
 	<include file="$(find jps_traveler)/launch/viewer.launch" />
+  <remap from="/joint_trajectory" to="/follow_joint_trajectory" />
 	<node
 		pkg="jps_traveler"
 		type="trajectory"

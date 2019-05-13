@@ -24,6 +24,7 @@
   </node>
 
 
+  <remap from="/joint_trajectory" to="/arm_controller/follow_joint_trajectory" />
   <node 
 	  pkg="jps_traveler"
 	  type="trajectory"
