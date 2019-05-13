@@ -452,10 +452,10 @@ public:
 
     this->piece_goal_poses[0].position.x = 0.376;
     this->piece_goal_poses[0].position.y = 0.436;
-    this->piece_goal_poses[1].position.x = 0.328;
-    this->piece_goal_poses[1].position.y = 0.381;
-    this->piece_goal_poses[2].position.x = 0.376;
-    this->piece_goal_poses[2].position.y = 0.436;
+    this->piece_goal_poses[1].position.x = 0.376;
+    this->piece_goal_poses[1].position.y = 0.436;
+    this->piece_goal_poses[2].position.x = 0.328;
+    this->piece_goal_poses[2].position.y = 0.381;
     this->piece_goal_poses[3].position.x = 0.376;
     this->piece_goal_poses[3].position.y = 0.436;
 
