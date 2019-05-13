@@ -348,11 +348,20 @@ void travel(void)
 		geometry_msgs::Pose pose=home;
 		pose.position.y+=3.0/100.0;
 		i++;
+		jps_traveler::MotionWithTime m;
+      	m.pose=pose;
+      	m.sec=6;
+      	pub_trajectory.publish(m);
+      	ros::Duration(m.sec+2).sleep();
 		if(i==4)
 		{
 			pose.position.x+=3.0/100;
 			i=0;
 			j++;
+			m.pose=pose;
+      		m.sec=6;
+      		pub_trajectory.publish(m);
+      		ros::Duration(m.sec+2).sleep();
 		}
 
 	}
@@ -375,6 +384,7 @@ public:
       z_distance=0.3;
       stepsize=0.1;
       msg.data=true;
+      sendToHome();
       pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
       pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
       // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
@@ -385,7 +395,7 @@ public:
       timer = nh.createTimer(ros::Duration(0.1), &main_controller::runRobot, this);
       pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
       // pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
-      sendToHome();
+      
 
     }
 
