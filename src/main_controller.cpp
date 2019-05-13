@@ -90,7 +90,7 @@ class main_controller{
       	// pose.position.x+=1/50.0;
       	{
       		pose.position.y+=3.0/100.0;
-      		m.pose=pose
+      		m.pose=pose;
       		m.sec=3;
       		// std::cout<<pose<<std::endl;
       		ROS_INFO_STREAM(pose);
@@ -146,7 +146,7 @@ class main_controller{
     bool findImageCenter(jps_feature_matching::FindPieceTransform piece)		//(const geometry_msgs::PoseStamped imagePose)
     {
       
-      geometry_msgs::PoseStamped imagePose = piece.pose;	
+      geometry_msgs::PoseStamped imagePose = piece.response.pose;	
       double x_gain = 1.0 / 10000.0;
       double y_gain = 1.0 / 10000.0;
       double theta_gain = 0.9;
