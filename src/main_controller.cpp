@@ -47,16 +47,12 @@ private:
 
   void sendToHome()
   {
-    geometry_msgs::Pose pose;
-    home = pose;
-    double temp = pose.position.y;
-
     // pose.position=(0.266, 0.422, 0.432);
     // pose.orientation(-0.271, 0.653, 0.272, 0.653);
     // tf::Quaternion quat(-0.271, 0.653, 0.272, 0.653);
     // Eigen::Vector3d pos(0.266, 0.422, 0.432);
     jps_traveler::MotionWithTime m;
-    m.pose = pose;
+    m.pose = this->home;
     m.sec = 6;
     pub_trajectory.publish(m);
     ros::Duration(m.sec + 2).sleep();
@@ -77,7 +73,7 @@ private:
     else if (this->piece_centered)
     {
       ROS_INFO("Picking piece...\n");
-      // this->pickPiece();
+      this->pickPiece();
     }
     else if (this->piece_in_frame)
     {
@@ -110,70 +106,59 @@ private:
 
   void pickPiece(void)
   {
-    // TODO: Move the EE to the camera frame.
+    tf::StampedTransform base_cam_transform;
+    tf::StampedTransform base_ee_transform;
+    geometry_msgs::Pose goal_pose;
+    jps_traveler::MotionWithTime msg;
     this->piece_centered = false;
     this->piece_in_frame = false;
-    // TODO: Move the EE down to the piece, correcting for the camera offset.
-    // TODO: Activate the vacuum gripper.
-    this->piece_gripped = true;
-    // TODO: Move the EE to an intermediate (home?) position.
 
-    ROS_INFO_STREAM("over center in cam coord  " << image_pose.pose.position.z);
-    tf::StampedTransform base_cam_transform;
+    ROS_INFO_STREAM(
+        "Camera centered on puzzle piece with error of "
+        << image_pose.pose.position.z
+        << " pixels.");
 
     try
     {
       listener.waitForTransform("/base_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/camera_link", ros::Time(0), base_cam_transform);
-    }
-    catch (tf::TransformException ex)
-    {
-      ROS_ERROR("Not found base to cam");
-      ros::Duration(1.0).sleep();
-    }
 
-    tf::StampedTransform base_ee_transform;
-
-    try
-    {
       listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+
+      goal_pose.position.x = base_cam_transform.getOrigin().x();
+      goal_pose.position.y = base_cam_transform.getOrigin().y();
+      goal_pose.position.z = base_cam_transform.getOrigin().z();
+      goal_pose.orientation.x = base_ee_transform.getRotation().x();
+      goal_pose.orientation.y = base_ee_transform.getRotation().y();
+      goal_pose.orientation.z = base_ee_transform.getRotation().z();
+      goal_pose.orientation.w = base_ee_transform.getRotation().w();
+
+      ROS_INFO_STREAM("Translating EE to camera position\n" << goal_pose);
+      msg.pose = goal_pose;
+      msg.sec = 3;
+      pub_trajectory.publish(msg);
+      ros::Duration(msg.sec + 2).sleep();
+
+      goal_pose.position.x += 0.003;
+      goal_pose.position.y -= 0.003;
+      goal_pose.position.z = 0.199;
+      msg.pose = goal_pose;
+      ROS_INFO_STREAM("Translating EE to puzzle centroid\n" << goal_pose);
+      pub_trajectory.publish(msg);
+      msg.sec = 8;
+      ros::Duration(msg.sec + 2).sleep();
+
+      ROS_INFO_STREAM("Gripping puzzle piece...");
+      pub_gripper.publish(angle_grip);
+      ros::Duration(2).sleep();
+      this->sendToHome();
+      this->piece_gripped = true;
     }
     catch (tf::TransformException ex)
     {
-      ROS_ERROR("Not found base to ee");
-      ros::Duration(1.0).sleep();
+      ROS_ERROR_STREAM(ex.what());
     }
-    geometry_msgs::Pose goalPose;
-    goalPose.position.x = base_cam_transform.getOrigin().x();
-    goalPose.position.y = base_cam_transform.getOrigin().y();
-    goalPose.position.z = base_cam_transform.getOrigin().z();
-    goalPose.orientation.x = base_ee_transform.getRotation().x();
-    goalPose.orientation.y = base_ee_transform.getRotation().y();
-    goalPose.orientation.z = base_ee_transform.getRotation().z();
-    goalPose.orientation.w = base_ee_transform.getRotation().w();
-
-    ROS_INFO_STREAM("sending to camera position" << goalPose);
-    ros::Duration(3).sleep();
-
-    jps_traveler::MotionWithTime m;
-    m.pose = goalPose;
-    m.sec = 8;
-    pub_trajectory.publish(m);
-    ros::Duration(m.sec + 2).sleep();
-
-    goalPose.position.x += 0.003;
-    goalPose.position.y -= 0.003;
-    goalPose.position.z = 0.199;
-    m.pose = goalPose;
-    ROS_INFO_STREAM("sending to puzzle position" << goalPose);
-    ros::Duration(3).sleep();
-    pub_trajectory.publish(m);
-    ros::Duration(m.sec + 2).sleep();
-
-    pub_gripper.publish(angle_grip);
-    ros::Duration(2).sleep();
-    sendToHome();
   }
 
   void centerPiece(void)
@@ -413,7 +398,7 @@ public:
     stepsize = 0.1;
     msg.data = true;
     pub_trajectory = nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
-    sendToHome();
+    this->sendToHome();
 
     pub_moved = nh.advertise<std_msgs::Bool>("/moved", 1);
     // sub_cameraCal=nh.subscribe("/camerapose", 1, &MainController::setCameraPose, this);
@@ -429,6 +414,7 @@ public:
     ROS_INFO("Initializing timer...");
     timer = nh.createTimer(ros::Duration(4.0), &MainController::runRobot, this);
     pub_gripper = nh.advertise<std_msgs::UInt16>("/servo", 1);
+    pub_gripper.publish(angle_ungrip);
   }
 
   Eigen::Matrix<double, 4, 4> transformToMatrix(tf::StampedTransform t)
