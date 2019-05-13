@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   ur_description
   std_msgs
   jps_traveler
+  jps_feature_matching
 )
 
 ## System dependencies are found with CMake's conventions

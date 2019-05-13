@@ -17,13 +17,14 @@
 #include<std_msgs/Bool.h>
 #include<jps_traveler/MotionWithTime.h>
 
+#include "jps_feature_matching/FindPieceTransform.h"
 
 class main_controller{
   private:
     ros::NodeHandle nh;
     // ros::Subscriber sub_cameraCal;
-    ros::Subscriber sub_puzzlePiece;
-	ros::ServiceClient piece_transform_client;
+    // ros::Subscriber sub_puzzlePiece;
+    ros::ServiceClient piece_transform_client;
     ros::Publisher pub_trajectory;
     ros::Publisher pub_gripper;
     ros::Publisher pub_moved;
@@ -99,7 +100,7 @@ class main_controller{
       bool flag=false;
 
       while(!flag)
-      	flag=findImageCenter()
+        flag=findImageCenter();
 
     }
 
@@ -113,8 +114,9 @@ class main_controller{
 
     bool findImageCenter()		//(const geometry_msgs::PoseStamped imagePose)
     {
+      jps_feature_matching::FindPieceTransform srv;
       piece_transform_client.call(srv);
-      geometry_msgs::PoseStamped imagePose = srv.pose;	
+      geometry_msgs::PoseStamped imagePose = srv.response.pose;	
       double x_gain = 1.0 / 10000.0;
       double y_gain = 1.0 / 10000.0;
       double theta_gain = 0.9;
@@ -249,9 +251,9 @@ class main_controller{
 
         Eigen::Quaterniond q_x(cos(theta/2), 0, 0, sin(theta/2));
         Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), 
-				        		  base_ee_transform.getRotation().x(),
-				            	  base_ee_transform.getRotation().y(),
-				            	  base_ee_transform.getRotation().z());
+            base_ee_transform.getRotation().x(),
+            base_ee_transform.getRotation().y(),
+            base_ee_transform.getRotation().z());
 
         Eigen::Quaterniond resultQ;
         resultQ.setIdentity();
@@ -299,21 +301,21 @@ class main_controller{
         goalPose.orientation.w=resultQ.w();
 
         /*
-        ROS_INFO_STREAM("Initial quaternion: ["
-            << q_curr.x() << ", "
-            << q_curr.y() << ", "
-            << q_curr.z() << ", "
-            << q_curr.w() << "]");
-        ROS_INFO_STREAM("Multiplied quaternion: ["
-            << q_x.x() << ", "
-            << q_x.y() << ", "
-            << q_x.z() << ", "
-            << q_x.w() << "]");
-        ROS_INFO_STREAM("Final quaternion: ["
-            << resultQ.x() << ", "
-            << resultQ.y() << ", "
-            << resultQ.z() << ", "
-            << resultQ.w() << "]"); */
+           ROS_INFO_STREAM("Initial quaternion: ["
+           << q_curr.x() << ", "
+           << q_curr.y() << ", "
+           << q_curr.z() << ", "
+           << q_curr.w() << "]");
+           ROS_INFO_STREAM("Multiplied quaternion: ["
+           << q_x.x() << ", "
+           << q_x.y() << ", "
+           << q_x.z() << ", "
+           << q_x.w() << "]");
+           ROS_INFO_STREAM("Final quaternion: ["
+           << resultQ.x() << ", "
+           << resultQ.y() << ", "
+           << resultQ.z() << ", "
+           << resultQ.w() << "]"); */
 
         ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
         m.pose=goalPose;
@@ -431,26 +433,26 @@ class main_controller{
   public:
     main_controller(ros::NodeHandle& nh): nh(nh)
   {
-      gripper_offset=84.3/1000.0;
-      table_offset=0.1;
-      angle_grip.data=150;
-      angle_ungrip.data=0;
-      z_distance=0.3;
-      stepsize=0.1;
-      msg.data=true;
-      pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
-      pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
-      // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
-      setCameraPose();
-      travelAcrossPlane();
-      // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-      sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
-      this->piece_transform_client = n.serviceClient<jps_feature_matching::FindPieceTransform>("find_piece_transform");
+    gripper_offset=84.3/1000.0;
+    table_offset=0.1;
+    angle_grip.data=150;
+    angle_ungrip.data=0;
+    z_distance=0.3;
+    stepsize=0.1;
+    msg.data=true;
+    pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
+    pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
+    // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
+    setCameraPose();
+    travelAcrossPlane();
+    // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
+    // sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
+    this->piece_transform_client = nh.serviceClient<jps_feature_matching::FindPieceTransform>("find_piece_transform");
 
-      // pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
-      pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
+    // pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
+    pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
 
-    }
+  }
 
     Eigen::Matrix<double,4,4> pose2frame(geometry_msgs::Pose p)
     {
