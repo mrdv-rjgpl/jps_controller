@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+	<include file="$(find ur_gazebo)/launch/ur5_joint_limited.launch">
+		<arg name="gui" value="false"/>
+	</include>
+
+	<include file="$(find jps_traveler)/launch/viewer.launch"/>
+
+	<node pkg="rqt_gui" type="rqt_gui" name="rqt_gui" args="--perspective-file $(find jps_traveler)/traveler.perspective" />
+
+	<remap from="/joint_trajectory" to="/arm_controller/follow_joint_trajectory" />
+	<node pkg="jps_traveler" type="trajectory" name="trajectory" />
+
+	<node pkg="jps_controller" type="main_controller" name="main_controller" output="screen" />
+</launch>

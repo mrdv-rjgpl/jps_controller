@@ -13,121 +13,114 @@
 // #include<rob_param.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <math.h>
-#include<std_msgs/UInt16.h>
-#include<std_msgs/Bool.h>
-#include<jps_traveler/MotionWithTime.h>
+#include <std_msgs/UInt16.h>
+#include <std_msgs/Bool.h>
+#include <jps_traveler/MotionWithTime.h>
 
-class main_controller{
-  private:
-    ros::NodeHandle nh;
-    // ros::Subscriber sub_cameraCal;
-    ros::Subscriber sub_puzzlePiece;
-    ros::Publisher pub_trajectory;
-    ros::Publisher pub_gripper;
-    ros::Publisher pub_moved;
+class main_controller
+{
+private:
+  ros::NodeHandle nh;
+  // ros::Subscriber sub_cameraCal;
+  ros::Subscriber sub_puzzlePiece;
+  ros::Publisher pub_trajectory;
+  ros::Publisher pub_gripper;
+  ros::Publisher pub_moved;
 
-    ros::Timer timer;
-    int num_pieces_placed;
-    bool piece_gripped;
-    bool piece_centered;
-    bool piece_in_frame;
-    tf::TransformListener listener;
+  ros::Timer timer;
+  int num_pieces_placed;
+  bool piece_gripped;
+  bool piece_centered;
+  bool piece_in_frame;
+  tf::TransformListener listener;
 
-    //constants needed
-    geometry_msgs::PoseStamped imagePose;
-    geometry_msgs::Pose home;
-    double gripper_offset;
-    double table_offset;
-    std_msgs::UInt16 angle_grip;
-    std_msgs::UInt16 angle_ungrip;
-    double z_distance;
-    double stepsize;
-    std_msgs::Bool msg;
+  // constants needed
+  geometry_msgs::PoseStamped imagePose;
+  geometry_msgs::Pose home;
+  geometry_msgs::Pose travel_pose;
+  double robot_delta_x;
+  double robot_delta_y;
+  int robot_pose_index;
+  double gripper_offset;
+  double table_offset;
+  std_msgs::UInt16 angle_grip;
+  std_msgs::UInt16 angle_ungrip;
+  double z_distance;
+  double stepsize;
+  std_msgs::Bool msg;
 
-    void sendToHome()
+  void sendToHome()
+  {
+    geometry_msgs::Pose pose;
+    home = pose;
+    double temp = pose.position.y;
+
+    // pose.position=(0.266, 0.422, 0.432);
+    // pose.orientation(-0.271, 0.653, 0.272, 0.653);
+    // tf::Quaternion quat(-0.271, 0.653, 0.272, 0.653);
+    // Eigen::Vector3d pos(0.266, 0.422, 0.432);
+    jps_traveler::MotionWithTime m;
+    m.pose = pose;
+    m.sec = 6;
+    pub_trajectory.publish(m);
+    ros::Duration(m.sec + 2).sleep();
+  }
+
+  void runRobot(const ros::TimerEvent&)
+  {
+    if (this->num_pieces_placed >= 4)
     {
-	  geometry_msgs::Pose pose;
-      pose.position.x=-0.0;
-      pose.position.y=0.430;
-      pose.position.z=0.315;
-      pose.orientation.x=-0.608;
-      pose.orientation.y=0.333;
-      pose.orientation.z=0.625;
-      pose.orientation.w=0.359;
-      home=pose;
-      double temp=pose.position.y;
-
-      // pose.position=(0.266, 0.422, 0.432);
-      // pose.orientation(-0.271, 0.653, 0.272, 0.653);
-      // tf::Quaternion quat(-0.271, 0.653, 0.272, 0.653);
-      // Eigen::Vector3d pos(0.266, 0.422, 0.432);
-      jps_traveler::MotionWithTime m;
-      m.pose=pose;
-      m.sec=6;
-      pub_trajectory.publish(m);
-      ros::Duration(m.sec+2).sleep();
+      ROS_INFO("All pieces successfully placed.\n");
+      // No operation
     }
+    else if (this->piece_gripped)
+    {
+      ROS_INFO("Placing piece...\n");
+      this->placePiece();
+    }
+    else if (this->piece_centered)
+    {
+      ROS_INFO("Picking piece...\n");
+      this->pickPiece();
+    }
+    else if (this->piece_in_frame)
+    {
+      ROS_INFO("Centering camera on piece...\n");
+      this->centerPiece();
+    }
+    else
+    {
+      ROS_INFO("Traveling across workspace...\n");
+      this->travel();
+    }
+  }
 
+  void getSurfData(const geometry_msgs::PoseStamped p)
+  {
+    imagePose = p;
+    this->piece_in_frame = true;
+    ROS_INFO("Piece found in frame during image callback.\n");
+  }
 
+  void placePiece(void)
+  {
+    // TODO: Move the EE to a pre-programmed position based on the piece index.
+    // TODO: Deactivate the vacuum gripper
+    this->piece_gripped = false;
+    ++this->num_pieces_placed;
+  }
 
-void runRobot(const ros::TimerEvent&)
-{
-	
+  void pickPiece(void)
+  {
+    // TODO: Move the EE to the camera frame.
+    this->piece_centered = false;
+    this->piece_in_frame = false;
+    // TODO: Move the EE down to the piece, correcting for the camera offset.
+    // TODO: Activate the vacuum gripper.
+    this->piece_gripped = true;
+    // TODO: Move the EE to an intermediate (home?) position.
 
-      if(this->num_pieces_placed >= 4)
-      {
-        ROS_INFO("All pieces successfully placed.\n");
-      	// No operation
-      }
-      else if(this->piece_gripped)
-      {
-        ROS_INFO("Placing piece...\n");
-      	this->placePiece();
-      }
-      else if(this->piece_centered)
-      {
-        ROS_INFO("Picking piece...\n");
-      	this->pickPiece();
-      }
-      else if(this->piece_in_frame)
-      {
-        ROS_INFO("Centering camera on piece...\n");
-      	this->centerPiece();
-      }
-      else
-      {
-        ROS_INFO("Traveling across workspace...\n");
-      	this->travel();
-      }
-}
-
-
-void getSurfData(const geometry_msgs::PoseStamped p)
-{
-  imagePose = p;
-  this->piece_in_frame = true;
-  ROS_INFO("Piece found in frame during image callback.\n");
-}
-
-void placePiece(void)
-{
-	// TODO: Move the EE to a pre-programmed position based on the piece index.
-	// TODO: Deactivate the vacuum gripper
-	this->piece_gripped = false;
-	++this->num_pieces_placed;
-}
-
-void pickPiece(void)
-{
-	// TODO: Move the EE to the camera frame.
-	this->piece_centered = false;
-	this->piece_in_frame = false;
-	// TODO: Move the EE down to the piece, correcting for the camera offset.
-	// TODO: Activate the vacuum gripper.
-	this->piece_gripped = true;
-	// TODO: Move the EE to an intermediate (home?) position.
-
-	 ROS_INFO_STREAM("over center in cam coord  "<<imagePose.pose.position.z);
+    ROS_INFO_STREAM("over center in cam coord  " << imagePose.pose.position.z);
     tf::StampedTransform base_cam_transform;
 
     try
@@ -135,7 +128,8 @@ void pickPiece(void)
       listener.waitForTransform("/base_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/camera_link", ros::Time(0), base_cam_transform);
     }
-    catch (tf::TransformException ex) {
+    catch (tf::TransformException ex)
+    {
       ROS_ERROR("Not found base to cam");
       ros::Duration(1.0).sleep();
     }
@@ -147,400 +141,359 @@ void pickPiece(void)
       listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
     }
-    catch (tf::TransformException ex) {
+    catch (tf::TransformException ex)
+    {
       ROS_ERROR("Not found base to ee");
       ros::Duration(1.0).sleep();
     }
     geometry_msgs::Pose goalPose;
-    goalPose.position.x=base_cam_transform.getOrigin().x();
-    goalPose.position.y=base_cam_transform.getOrigin().y();
-    goalPose.position.z=base_cam_transform.getOrigin().z();
-    goalPose.orientation.x=base_ee_transform.getRotation().x();
-    goalPose.orientation.y=base_ee_transform.getRotation().y();
-    goalPose.orientation.z=base_ee_transform.getRotation().z();
-    goalPose.orientation.w=base_ee_transform.getRotation().w();
+    goalPose.position.x = base_cam_transform.getOrigin().x();
+    goalPose.position.y = base_cam_transform.getOrigin().y();
+    goalPose.position.z = base_cam_transform.getOrigin().z();
+    goalPose.orientation.x = base_ee_transform.getRotation().x();
+    goalPose.orientation.y = base_ee_transform.getRotation().y();
+    goalPose.orientation.z = base_ee_transform.getRotation().z();
+    goalPose.orientation.w = base_ee_transform.getRotation().w();
 
-    ROS_INFO_STREAM("sending to camera position"<<goalPose);
+    ROS_INFO_STREAM("sending to camera position" << goalPose);
     ros::Duration(3).sleep();
 
     jps_traveler::MotionWithTime m;
-    m.pose=goalPose;
-    m.sec=8;
+    m.pose = goalPose;
+    m.sec = 8;
     pub_trajectory.publish(m);
-    ros::Duration(m.sec+2).sleep();
+    ros::Duration(m.sec + 2).sleep();
 
-    goalPose.position.x+=0.003;
-    goalPose.position.y-=0.003;
-    goalPose.position.z=0.199;
-    m.pose=goalPose;
-    ROS_INFO_STREAM("sending to puzzle position"<<goalPose);
+    goalPose.position.x += 0.003;
+    goalPose.position.y -= 0.003;
+    goalPose.position.z = 0.199;
+    m.pose = goalPose;
+    ROS_INFO_STREAM("sending to puzzle position" << goalPose);
     ros::Duration(3).sleep();
     pub_trajectory.publish(m);
-    ros::Duration(m.sec+2).sleep();
+    ros::Duration(m.sec + 2).sleep();
 
     pub_gripper.publish(angle_grip);
     ros::Duration(2).sleep();
     sendToHome();
-}
+  }
 
-void centerPiece(void)
-{
-	double x_gain = 1.0 / 10000.0;
-      double y_gain = 1.0 / 10000.0;
-      double theta_gain = 0.9;
-
-      double theta = -2.0 * atan2(imagePose.pose.orientation.z, imagePose.pose.orientation.w);
-      ROS_INFO_STREAM("Obtained differential angle of " << theta);
-	// TODO: Check error
-	if(!(imagePose.pose.position.z < 2 && theta < 0.05 && theta > -0.05))
-	{
-
-		ROS_INFO_STREAM("not over camera");
-        tf::StampedTransform base_ee_transform;
-        try
-        {
-          listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
-          listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
-        }
-        catch (tf::TransformException ex) {
-          ROS_ERROR("Not found base to ee");
-          ros::Duration(1.0).sleep();
-        }
-        geometry_msgs::Pose goalPose;
-
-        tf::StampedTransform camera_ee_transform;
-        try
-        {
-          listener.waitForTransform("/ee_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
-          listener.lookupTransform("/ee_link", "/camera_link", ros::Time(0), camera_ee_transform);
-        }
-        catch (tf::TransformException ex) {
-          ROS_ERROR("Not found camera to base");
-          ros::Duration(1.0).sleep();
-        }
-
-        geometry_msgs::Pose temp;
-        temp.position.x=camera_ee_transform.getOrigin().x();
-        temp.position.y=camera_ee_transform.getOrigin().y();
-        temp.position.z=camera_ee_transform.getOrigin().z();
-        temp.orientation.x=camera_ee_transform.getRotation().x();
-        temp.orientation.y=camera_ee_transform.getRotation().y();
-        temp.orientation.z=camera_ee_transform.getRotation().z();
-        temp.orientation.w=camera_ee_transform.getRotation().w();
-
-
-        Eigen::Matrix<double,4,4> cam2ee = pose2frame(temp);
-        cam2ee(0,3)=0;cam2ee(1,3)=0;cam2ee(2,3)=0;
-        Eigen::Matrix<double,4,1> trans_camCoord(x_gain*imagePose.pose.position.x,y_gain*imagePose.pose.position.y, 0, 1);
-        Eigen::Matrix<double,4,1> trans_eeCoord = cam2ee * trans_camCoord;
-
-        ROS_INFO_STREAM("translation in cam coord\n" << trans_camCoord);
-        ROS_INFO_STREAM("translation in ee coord\n" << trans_eeCoord);
-
-        temp.position.x=base_ee_transform.getOrigin().x();
-        temp.position.y=base_ee_transform.getOrigin().y();
-        temp.position.z=base_ee_transform.getOrigin().z();
-        temp.orientation.x=base_ee_transform.getRotation().x();
-        temp.orientation.y=base_ee_transform.getRotation().y();
-        temp.orientation.z=base_ee_transform.getRotation().z();
-        temp.orientation.w=base_ee_transform.getRotation().w();
-
-        Eigen::Matrix<double,4,4> ee2base = pose2frame(temp);
-        ee2base(0,3)=0;ee2base(1,3)=0;ee2base(2,3)=0;
-        Eigen::Matrix<double,4,1> trans_baseCoord = ee2base * trans_eeCoord;
-
-
-        ROS_INFO_STREAM("translation in base coord\n" << trans_baseCoord);
-
-        theta *= theta_gain;
-
-        if(theta >= 0.174)
-        {
-          theta = 0.174;
-        }
-        else if(theta <= -0.174)
-        {
-          theta = -0.174;
-        }
-
-        Eigen::Quaterniond q_x(cos(theta/2), 0, 0, sin(theta/2));
-        Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), base_ee_transform.getRotation().x(),
-            base_ee_transform.getRotation().y(),
-            base_ee_transform.getRotation().z());
-
-        Eigen::Quaterniond resultQ;
-        resultQ.setIdentity();
-
-        resultQ.w() = q_x.w() * q_curr.w() - q_x.vec().dot(q_curr.vec());
-        resultQ.vec() = q_x.w() * q_curr.vec() + q_curr.w() * q_x.vec()
-          + q_x.vec().cross(q_curr.vec());
-
-        if(resultQ.w() < 0)
-        {
-          resultQ.w() *= -1;
-          resultQ.x()*=-1;
-          resultQ.y()*=-1;
-          resultQ.z()*=-1;
-        }
-
-        resultQ.normalize();
-
-
-
-        //we only want to move in x and y. everything else remains as is.
-        goalPose.position.x=trans_baseCoord(0,0) + base_ee_transform.getOrigin().x();
-        goalPose.position.y=trans_baseCoord(1,0) + base_ee_transform.getOrigin().y();
-        goalPose.position.z=base_ee_transform.getOrigin().z();
-        // goalPose.orientation.x=base_ee_transform.getRotation().x();
-        // goalPose.orientation.y=base_ee_transform.getRotation().y();
-        // goalPose.orientation.z=base_ee_transform.getRotation().z();
-        // goalPose.orientation.w=base_ee_transform.getRotation().w();
-        // ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
-
-        // jps_traveler::MotionWithTime m;
-        // m.pose=goalPose;
-        // m.sec=8;
-        // pub_trajectory.publish(m);
-        // ros::Duration(m.sec+2).sleep();
-
-
-
-        // goalPose.position.x=base_ee_transform.getOrigin().x();
-        // goalPose.position.y=base_ee_transform.getOrigin().y();
-        // goalPose.position.z=base_ee_transform.getOrigin().z();
-        goalPose.orientation.x=resultQ.x();
-        goalPose.orientation.y=resultQ.y();
-        goalPose.orientation.z=resultQ.z();
-        goalPose.orientation.w=resultQ.w();
-
-        ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
-        jps_traveler::MotionWithTime m;
-
-        m.pose=goalPose;
-        m.sec=8;
-        pub_trajectory.publish(m);
-        ros::Duration(10).sleep();
-
-        ROS_INFO_STREAM("curr pose in base coord\n"
-            << base_ee_transform.getOrigin().x() << "\n"
-            << base_ee_transform.getOrigin().y() << "\n"
-            << base_ee_transform.getOrigin().z() << "\n"
-            << base_ee_transform.getRotation().x() << "\n"
-            << base_ee_transform.getRotation().y() << "\n"
-            << base_ee_transform.getRotation().z() << "\n"
-            << base_ee_transform.getRotation().w() << "\n"
-            );
-        ROS_INFO_STREAM("goal pose in base coord:\n"<< goalPose);
-
-
-
-
-		// TODO: Run a single step attempt to fix the error.
-	}
-	else
-	{
-		this->piece_centered = true;
-	}
-}
-
-void travel(void)
-{
-  // TODO: Move EE to next pose in list
-  // TODO: Increment pose counter.
-  static int i=0;
-  static int j=0;
-  static geometry_msgs::Pose pose = home;
-
-  if(j!=4)
+  void centerPiece(void)
   {
-    pose.position.y+=3.0/100.0;
-    i++;
-    jps_traveler::MotionWithTime m;
-    m.pose=pose;
-    m.sec=6;
-    pub_trajectory.publish(m);
-    ros::Duration(m.sec+2).sleep();
+    double x_gain = 1.0 / 10000.0;
+    double y_gain = 1.0 / 10000.0;
+    double theta_gain = 0.9;
 
-    if(i==4)
+    double theta = -2.0 * atan2(imagePose.pose.orientation.z, imagePose.pose.orientation.w);
+    ROS_INFO_STREAM("Obtained differential angle of " << theta);
+    // TODO: Check error
+    if (!(imagePose.pose.position.z < 2 && theta < 0.05 && theta > -0.05))
     {
-      pose = home;
-      pose.position.x += 3.0/100.0;
-      i=0;
-      j++;
-      m.pose=pose;
-      m.sec=6;
+      ROS_INFO_STREAM("not over camera");
+      tf::StampedTransform base_ee_transform;
+      try
+      {
+        listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
+        listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("Not found base to ee");
+        ros::Duration(1.0).sleep();
+      }
+      geometry_msgs::Pose goalPose;
+
+      tf::StampedTransform camera_ee_transform;
+      try
+      {
+        listener.waitForTransform("/ee_link", "/camera_link", ros::Time(0), ros::Duration(10.0));
+        listener.lookupTransform("/ee_link", "/camera_link", ros::Time(0), camera_ee_transform);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("Not found camera to base");
+        ros::Duration(1.0).sleep();
+      }
+
+      geometry_msgs::Pose temp;
+      temp.position.x = camera_ee_transform.getOrigin().x();
+      temp.position.y = camera_ee_transform.getOrigin().y();
+      temp.position.z = camera_ee_transform.getOrigin().z();
+      temp.orientation.x = camera_ee_transform.getRotation().x();
+      temp.orientation.y = camera_ee_transform.getRotation().y();
+      temp.orientation.z = camera_ee_transform.getRotation().z();
+      temp.orientation.w = camera_ee_transform.getRotation().w();
+
+      Eigen::Matrix<double, 4, 4> cam2ee = pose2frame(temp);
+      cam2ee(0, 3) = 0;
+      cam2ee(1, 3) = 0;
+      cam2ee(2, 3) = 0;
+      Eigen::Matrix<double, 4, 1> trans_camCoord(x_gain * imagePose.pose.position.x, y_gain * imagePose.pose.position.y,
+                                                 0, 1);
+      Eigen::Matrix<double, 4, 1> trans_eeCoord = cam2ee * trans_camCoord;
+
+      ROS_INFO_STREAM("translation in cam coord\n" << trans_camCoord);
+      ROS_INFO_STREAM("translation in ee coord\n" << trans_eeCoord);
+
+      temp.position.x = base_ee_transform.getOrigin().x();
+      temp.position.y = base_ee_transform.getOrigin().y();
+      temp.position.z = base_ee_transform.getOrigin().z();
+      temp.orientation.x = base_ee_transform.getRotation().x();
+      temp.orientation.y = base_ee_transform.getRotation().y();
+      temp.orientation.z = base_ee_transform.getRotation().z();
+      temp.orientation.w = base_ee_transform.getRotation().w();
+
+      Eigen::Matrix<double, 4, 4> ee2base = pose2frame(temp);
+      ee2base(0, 3) = 0;
+      ee2base(1, 3) = 0;
+      ee2base(2, 3) = 0;
+      Eigen::Matrix<double, 4, 1> trans_baseCoord = ee2base * trans_eeCoord;
+
+      ROS_INFO_STREAM("translation in base coord\n" << trans_baseCoord);
+
+      theta *= theta_gain;
+
+      if (theta >= 0.174)
+      {
+        theta = 0.174;
+      }
+      else if (theta <= -0.174)
+      {
+        theta = -0.174;
+      }
+
+      Eigen::Quaterniond q_x(cos(theta / 2), 0, 0, sin(theta / 2));
+      Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), base_ee_transform.getRotation().x(),
+                                base_ee_transform.getRotation().y(), base_ee_transform.getRotation().z());
+
+      Eigen::Quaterniond resultQ;
+      resultQ.setIdentity();
+
+      resultQ.w() = q_x.w() * q_curr.w() - q_x.vec().dot(q_curr.vec());
+      resultQ.vec() = q_x.w() * q_curr.vec() + q_curr.w() * q_x.vec() + q_x.vec().cross(q_curr.vec());
+
+      if (resultQ.w() < 0)
+      {
+        resultQ.w() *= -1;
+        resultQ.x() *= -1;
+        resultQ.y() *= -1;
+        resultQ.z() *= -1;
+      }
+
+      resultQ.normalize();
+
+      // we only want to move in x and y. everything else remains as is.
+      goalPose.position.x = trans_baseCoord(0, 0) + base_ee_transform.getOrigin().x();
+      goalPose.position.y = trans_baseCoord(1, 0) + base_ee_transform.getOrigin().y();
+      goalPose.position.z = base_ee_transform.getOrigin().z();
+      // goalPose.orientation.x=base_ee_transform.getRotation().x();
+      // goalPose.orientation.y=base_ee_transform.getRotation().y();
+      // goalPose.orientation.z=base_ee_transform.getRotation().z();
+      // goalPose.orientation.w=base_ee_transform.getRotation().w();
+      // ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
+
+      // jps_traveler::MotionWithTime m;
+      // m.pose=goalPose;
+      // m.sec=8;
+      // pub_trajectory.publish(m);
+      // ros::Duration(m.sec+2).sleep();
+
+      // goalPose.position.x=base_ee_transform.getOrigin().x();
+      // goalPose.position.y=base_ee_transform.getOrigin().y();
+      // goalPose.position.z=base_ee_transform.getOrigin().z();
+      goalPose.orientation.x = resultQ.x();
+      goalPose.orientation.y = resultQ.y();
+      goalPose.orientation.z = resultQ.z();
+      goalPose.orientation.w = resultQ.w();
+
+      ROS_INFO_STREAM("goal pose in base coord after rotation: " << goalPose);
+      jps_traveler::MotionWithTime m;
+
+      m.pose = goalPose;
+      m.sec = 8;
       pub_trajectory.publish(m);
-      ros::Duration(m.sec+2).sleep();
+      ros::Duration(10).sleep();
+
+      ROS_INFO_STREAM("curr pose in base coord\n"
+                      << base_ee_transform.getOrigin().x() << "\n"
+                      << base_ee_transform.getOrigin().y() << "\n"
+                      << base_ee_transform.getOrigin().z() << "\n"
+                      << base_ee_transform.getRotation().x() << "\n"
+                      << base_ee_transform.getRotation().y() << "\n"
+                      << base_ee_transform.getRotation().z() << "\n"
+                      << base_ee_transform.getRotation().w() << "\n");
+      ROS_INFO_STREAM("goal pose in base coord:\n" << goalPose);
+
+      // TODO: Run a single step attempt to fix the error.
+    }
+    else
+    {
+      this->piece_centered = true;
+    }
+  }
+
+  void travel(void)
+  {
+    // TODO: Move EE to next pose in list
+    // TODO: Increment pose counter.
+    if(this->robot_pose_index < 16)
+    {
+      jps_traveler::MotionWithTime msg;
+      msg.pose = this->travel_pose;
+      msg.sec = 4;
+      pub_trajectory.publish(msg);
+      ros::Duration(msg.sec + 2).sleep(); // TODO: Remove this, as the timer will take care of it.
+      this->robot_pose_index++;
+
+      if(this->robot_pose_index % 4 == 0)
+      {
+        this->travel_pose.position.x += this->robot_delta_x;
+        this->robot_delta_y *= -1.0;
+      }
+      else
+      {
+        this->travel_pose.position.y += this->robot_delta_y;
+      }
     }
     else
     {
       // No operation
     }
-  }
-  else
-  {
-    ROS_INFO_STREAM("out of workspace");
-  }
-}
 
+//    if (j < 4)
+//    {
+//      this->travel_pose.position.y += delta_y;
+//      i++;
+//      jps_traveler::MotionWithTime m;
+//      m.pose = this->travel_pose;
+//      m.sec = 6;
+//      pub_trajectory.publish(m);
+//      ros::Duration(m.sec + 2).sleep();
+//
+//      if (i == 4)
+//      {
+//        this->travel_pose.position.x += 3.0 / 100.0;
+//        delta_y *= -1.0;
+//        i = 0;
+//        j++;
+//        m.this->travel_pose = this->travel_pose;
+//        m.sec = 2;
+//        pub_trajectory.publish(m);
+//        ros::Duration(m.sec + 2).sleep();
+//      }
+//      else
+//      {
+//        // No operation
+//      }
+//    }
+//    else
+//    {
+//      ROS_INFO_STREAM("out of workspace");
+//    }
+  }
 
 public:
-    main_controller(ros::NodeHandle& nh): nh(nh)
+  main_controller(ros::NodeHandle& nh) : nh(nh)
   {
-  	this->num_pieces_placed = 0;
-  	this->piece_gripped = false;
-  	this->piece_centered = false;
-  	this->piece_in_frame = false;
-      gripper_offset=84.3/1000.0;
-      table_offset=0.1;
-      angle_grip.data=150;
-      angle_ungrip.data=0;
-      z_distance=0.3;
-      stepsize=0.1;
-      msg.data=true;
-      pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
-	  sendToHome();
+    this->num_pieces_placed = 0;
+    this->piece_gripped = false;
+    this->piece_centered = false;
+    this->piece_in_frame = false;
+    this->robot_pose_index = 0;
+    this->robot_delta_x = 3.0 / 100.0;
+    this->robot_delta_y = 3.0 / 100.0;
 
-      pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
-      // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
-      // setCameraPose();
-      // travelAcrossPlane();
-      // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-      sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::getSurfData, this);
-      timer = nh.createTimer(ros::Duration(0.1), &main_controller::runRobot, this);
-      pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
-      // pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
-      
+    // Initialize robot home and initial travel pose.
+    this->home.position.x = -0.0;
+    this->home.position.y = 0.430;
+    this->home.position.z = 0.315;
+    this->home.orientation.x = -0.608;
+    this->home.orientation.y = 0.333;
+    this->home.orientation.z = 0.625;
+    this->home.orientation.w = 0.359;
 
-    }
+    this->travel_pose = this->home;
 
-    Eigen::Matrix<double,4,4> pose2frame(geometry_msgs::Pose p)
-    {
-      tf::Quaternion quat(p.orientation.x, p.orientation.y,p.orientation.z, p.orientation.w);
-      Eigen::Vector3d pos(p.position.x, p.position.y, p.position.z);
-      Eigen::Matrix<double,3,3> R;
-      R=quat2rotm(quat);
-      Eigen::Matrix<double,4, 4> goalFrame=Eigen::Matrix4d::Identity();
-      goalFrame.block(0,0,3,3)<<R;
-      goalFrame.block(0,3,3,1)<<pos;
-      return goalFrame;
-    }
+    gripper_offset = 84.3 / 1000.0;
+    table_offset = 0.1;
+    angle_grip.data = 150;
+    angle_ungrip.data = 0;
+    z_distance = 0.3;
+    stepsize = 0.1;
+    msg.data = true;
+    pub_trajectory = nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
+    sendToHome();
 
-    Eigen::Matrix<double,3,3> quat2rotm(tf::Quaternion q)
-    {
-      float qw=q.w(), qx=q.x(), qy=q.y(), qz=q.z();
-      // std::cout<<qx<<" "<<qy<<" "<<qz<<" "<<qw<<std::endl;
-      Eigen::Matrix<double,3,3> R;
-      R(0,0)=1-2*qy*qy-2*qz*qz;
-      R(0,1)=2*qx*qy-2*qz*qw;
-      R(0,2)=2*qx*qz+2*qy*qw;
-      R(1,0)=2*qx*qy+2*qz*qw;
-      R(1,1)=1-2*qx*qx-2*qz*qz;
-      R(1,2)=2*qy*qz-2*qx*qw;
-      R(2,0)=2*qx*qz-2*qy*qw;
-      R(2,1)=2*qy*qz+2*qx*qw;
-      R(2,2)=1-2*qx*qx-2*qy*qy;
-      return R;
-    }
+    pub_moved = nh.advertise<std_msgs::Bool>("/moved", 1);
+    // sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
+    // setCameraPose();
+    // travelAcrossPlane();
+    // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
+    sub_puzzlePiece = nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::getSurfData, this);
+    timer = nh.createTimer(ros::Duration(4.0), &main_controller::runRobot, this);
+    pub_gripper = nh.advertise<std_msgs::UInt16>("/servo", 1);
+    // pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
+  }
 
-    geometry_msgs::Pose frame2pose(Eigen::Matrix<double,4,4> f)
-    {
-      double qw,qx,qy,qz;
-      qw=sqrt(1+f(0,0)+f(1,1)+f(2,2))/2.0;
-      qx=(f(2,1)-f(1,2))/(4*qw);
-      qy=(f(0,2)-f(2,0))/(4*qw);
-      qx=(f(1,0)-f(0,1))/(4*qw);
-      geometry_msgs::Pose g;
-      g.orientation.x=qx;
-      g.orientation.y=qy;
-      g.orientation.z=qz;
-      g.orientation.w=qw;
-      g.position.x=f(0,3);
-      g.position.y=f(1,3);
-      g.position.z=f(2,3);
+  Eigen::Matrix<double, 4, 4> pose2frame(geometry_msgs::Pose p)
+  {
+    tf::Quaternion quat(p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
+    Eigen::Vector3d pos(p.position.x, p.position.y, p.position.z);
+    Eigen::Matrix<double, 3, 3> R;
+    R = quat2rotm(quat);
+    Eigen::Matrix<double, 4, 4> goalFrame = Eigen::Matrix4d::Identity();
+    goalFrame.block(0, 0, 3, 3) << R;
+    goalFrame.block(0, 3, 3, 1) << pos;
+    return goalFrame;
+  }
 
-      // g.orientation={qw,qx,qy,qz};
-      // g.position={f(0,3),f(1,3),f(2,3)};
-      return g;
-    }
+  Eigen::Matrix<double, 3, 3> quat2rotm(tf::Quaternion q)
+  {
+    float qw = q.w(), qx = q.x(), qy = q.y(), qz = q.z();
+    // std::cout<<qx<<" "<<qy<<" "<<qz<<" "<<qw<<std::endl;
+    Eigen::Matrix<double, 3, 3> R;
+    R(0, 0) = 1 - 2 * qy * qy - 2 * qz * qz;
+    R(0, 1) = 2 * qx * qy - 2 * qz * qw;
+    R(0, 2) = 2 * qx * qz + 2 * qy * qw;
+    R(1, 0) = 2 * qx * qy + 2 * qz * qw;
+    R(1, 1) = 1 - 2 * qx * qx - 2 * qz * qz;
+    R(1, 2) = 2 * qy * qz - 2 * qx * qw;
+    R(2, 0) = 2 * qx * qz - 2 * qy * qw;
+    R(2, 1) = 2 * qy * qz + 2 * qx * qw;
+    R(2, 2) = 1 - 2 * qx * qx - 2 * qy * qy;
+    return R;
+  }
 
+  geometry_msgs::Pose frame2pose(Eigen::Matrix<double, 4, 4> f)
+  {
+    double qw, qx, qy, qz;
+    qw = sqrt(1 + f(0, 0) + f(1, 1) + f(2, 2)) / 2.0;
+    qx = (f(2, 1) - f(1, 2)) / (4 * qw);
+    qy = (f(0, 2) - f(2, 0)) / (4 * qw);
+    qx = (f(1, 0) - f(0, 1)) / (4 * qw);
+    geometry_msgs::Pose g;
+    g.orientation.x = qx;
+    g.orientation.y = qy;
+    g.orientation.z = qz;
+    g.orientation.w = qw;
+    g.position.x = f(0, 3);
+    g.position.y = f(1, 3);
+    g.position.z = f(2, 3);
+
+    // g.orientation={qw,qx,qy,qz};
+    // g.position={f(0,3),f(1,3),f(2,3)};
+    return g;
+  }
 };
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "main_controller");
   ros::NodeHandle nh;
-  main_controller maincontrol (nh) ;
+  main_controller maincontrol(nh);
   ros::spin();
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // #include <ros/ros.h>
 // #include <ur_kinematics/ur_kin.h>
@@ -560,7 +513,6 @@ int main(int argc, char** argv)
 // #include<std_msgs/UInt16.h>
 // #include<std_msgs/Bool.h>
 // #include<jps_traveler/MotionWithTime.h>
-
 
 // class main_controller{
 //   private:
@@ -583,8 +535,6 @@ int main(int argc, char** argv)
 //     double z_distance;
 //     double stepsize;
 //     std_msgs::Bool msg;
-
-
 
 //     void travelAcrossPlane()
 //     {
@@ -639,7 +589,6 @@ int main(int argc, char** argv)
 //       ROS_INFO_STREAM("after everything");
 
 //     }
-
 
 //     //get transform between ee and camera. After hand-eye cal.
 //     void setCameraPose()
@@ -715,9 +664,6 @@ int main(int argc, char** argv)
 
 //   	    pub_gripper.publish(angle_grip);
 
-
-
-
 //       }
 //       else
 //       {
@@ -754,10 +700,10 @@ int main(int argc, char** argv)
 //         temp.orientation.z=camera_ee_transform.getRotation().z();
 //         temp.orientation.w=camera_ee_transform.getRotation().w();
 
-
 //         Eigen::Matrix<double,4,4> cam2ee = pose2frame(temp);
 //         cam2ee(0,3)=0;cam2ee(1,3)=0;cam2ee(2,3)=0;
-//         Eigen::Matrix<double,4,1> trans_camCoord(x_gain*imagePose.pose.position.x,y_gain*imagePose.pose.position.y, 0, 1);
+//         Eigen::Matrix<double,4,1> trans_camCoord(x_gain*imagePose.pose.position.x,y_gain*imagePose.pose.position.y,
+//         0, 1);
 //         Eigen::Matrix<double,4,1> trans_eeCoord = cam2ee * trans_camCoord;
 
 //         ROS_INFO_STREAM("translation in cam coord\n" << trans_camCoord);
@@ -774,7 +720,6 @@ int main(int argc, char** argv)
 //         Eigen::Matrix<double,4,4> ee2base = pose2frame(temp);
 //         ee2base(0,3)=0;ee2base(1,3)=0;ee2base(2,3)=0;
 //         Eigen::Matrix<double,4,1> trans_baseCoord = ee2base * trans_eeCoord;
-
 
 //         ROS_INFO_STREAM("translation in base coord\n" << trans_baseCoord);
 
@@ -811,8 +756,6 @@ int main(int argc, char** argv)
 
 //         resultQ.normalize();
 
-
-
 //         //we only want to move in x and y. everything else remains as is.
 //         goalPose.position.x=trans_baseCoord(0,0) + base_ee_transform.getOrigin().x();
 //         goalPose.position.y=trans_baseCoord(1,0) + base_ee_transform.getOrigin().y();
@@ -828,8 +771,6 @@ int main(int argc, char** argv)
 //         // m.sec=8;
 //         // pub_trajectory.publish(m);
 //         // ros::Duration(m.sec+2).sleep();
-
-
 
 //         // goalPose.position.x=base_ee_transform.getOrigin().x();
 //         // goalPose.position.y=base_ee_transform.getOrigin().y();
@@ -932,7 +873,6 @@ int main(int argc, char** argv)
 //       //computes pose from base to puzzle
 //       // F_bp = F_be * F_ec * F_cp;
 
-
 //       //frame from base to vaccuum gripper
 //       Eigen::Matrix<double,4,4> F_bvg=F_bp;
 //       F_bvg(3,3)+=table_offset;
@@ -959,7 +899,6 @@ int main(int argc, char** argv)
 //       pub_gripper.publish(angle_grip);
 //       ros::Duration(2).sleep();
 
-
 //       //move to intermediate position
 //       pub_trajectory.publish(home);
 
@@ -984,7 +923,8 @@ int main(int argc, char** argv)
 //       setCameraPose();
 //       travelAcrossPlane();
 //       // sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
-//       sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
+//       sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter,
+//       this);
 
 //       // pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
 //       pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
