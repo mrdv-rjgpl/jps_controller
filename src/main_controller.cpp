@@ -23,7 +23,7 @@ class main_controller{
     ros::NodeHandle nh;
     // ros::Subscriber sub_cameraCal;
     ros::Subscriber sub_puzzlePiece;
-		ros::ServiceClient piece_transform_client;
+	ros::ServiceClient piece_transform_client;
     ros::Publisher pub_trajectory;
     ros::Publisher pub_gripper;
     ros::Publisher pub_moved;
@@ -95,6 +95,12 @@ class main_controller{
       // std::cout<<"after everything"<<std::endl;
       ROS_INFO_STREAM("after everything");
 
+      jps_feature_matching::FindPieceTransform s;
+      bool flag=false;
+
+      while(!flag)
+      	flag=findImageCenter()
+
     }
 
 
@@ -105,8 +111,10 @@ class main_controller{
       // camframe.position.x=p.position.x;
     }
 
-    void findImageCenter(const geometry_msgs::PoseStamped imagePose)
+    bool findImageCenter()		//(const geometry_msgs::PoseStamped imagePose)
     {
+      piece_transform_client.call(srv);
+      geometry_msgs::PoseStamped imagePose = srv.pose;	
       double x_gain = 1.0 / 10000.0;
       double y_gain = 1.0 / 10000.0;
       double theta_gain = 0.9;
@@ -167,6 +175,7 @@ class main_controller{
         ros::Duration(3).sleep();
         pub_trajectory.publish(m);
         ros::Duration(m.sec+2).sleep();
+        return true;
       }
       else
       {
@@ -239,9 +248,10 @@ class main_controller{
         }
 
         Eigen::Quaterniond q_x(cos(theta/2), 0, 0, sin(theta/2));
-        Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), base_ee_transform.getRotation().x(),
-            base_ee_transform.getRotation().y(),
-            base_ee_transform.getRotation().z());
+        Eigen::Quaterniond q_curr(base_ee_transform.getRotation().w(), 
+				        		  base_ee_transform.getRotation().x(),
+				            	  base_ee_transform.getRotation().y(),
+				            	  base_ee_transform.getRotation().z());
 
         Eigen::Quaterniond resultQ;
         resultQ.setIdentity();
@@ -327,6 +337,7 @@ class main_controller{
         msg.data=true;
         pub_moved.publish(msg);
       }
+      return false;
       // goalPose.x=x_gain*
 
     }
