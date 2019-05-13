@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   ur_description
   std_msgs
+  jps_traveler
 )
 
 ## System dependencies are found with CMake's conventions

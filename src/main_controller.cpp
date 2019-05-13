@@ -15,6 +15,7 @@
 #include <math.h>
 #include<std_msgs/UInt16.h>
 #include<std_msgs/Bool.h>
+#include<jps_traveler/MotionWithTime.h>
 
 
 class main_controller{
@@ -61,8 +62,11 @@ private:
 		// pose.orientation(-0.271, 0.653, 0.272, 0.653);
 		// tf::Quaternion quat(-0.271, 0.653, 0.272, 0.653);
 		// Eigen::Vector3d pos(0.266, 0.422, 0.432);
-		pub_trajectory.publish(pose);
-		ros::Duration(10).sleep();
+		jps_traveler::MotionWithTime m;
+		m.pose=pose;
+		m.sec=6;
+		pub_trajectory.publish(m);
+		ros::Duration(m.sec+2).sleep();
 		pub_moved.publish(msg);
 		// ros::Duration(2).sleep();
 		// for(int i=1;i<=5;i++)
@@ -151,9 +155,11 @@ private:
 			ROS_INFO_STREAM("sending to camera position"<<goalPose);
 			ros::Duration(3).sleep();
 
-
-			pub_trajectory.publish(goalPose);
-			ros::Duration(10).sleep();
+			jps_traveler::MotionWithTime m;
+			m.pose=goalPose;
+			m.sec=8;
+			pub_trajectory.publish(m);
+			ros::Duration(m.sec+2).sleep();
 
 
 		}
@@ -261,8 +267,12 @@ private:
 			goalPose.orientation.z=base_ee_transform.getRotation().z();
 			goalPose.orientation.w=base_ee_transform.getRotation().w();
 			ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
-			pub_trajectory.publish(goalPose);
-			ros::Duration(10).sleep();
+
+			jps_traveler::MotionWithTime m;
+			m.pose=goalPose;
+			m.sec=8;
+			pub_trajectory.publish(m);
+			ros::Duration(m.sec+2).sleep();
 
 
 
@@ -291,7 +301,9 @@ private:
           << resultQ.w() << "]");
 
 			ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
-			pub_trajectory.publish(goalPose);
+			m.pose=goalPose;
+
+			pub_trajectory.publish(m);
 			ros::Duration(10).sleep();
 
 
@@ -306,8 +318,8 @@ private:
           << base_ee_transform.getRotation().w() << "\n"
           );
 			ROS_INFO_STREAM("goal pose in base coord:\n"<< goalPose);
-			pub_trajectory.publish(goalPose);
-			ros::Duration(10).sleep();
+			// pub_trajectory.publish(goalPose);
+			// ros::Duration(10).sleep();
 
 			msg.data=true;
 			pub_moved.publish(msg);
@@ -417,7 +429,7 @@ public:
 		z_distance=0.3;
 		stepsize=0.1;
 		msg.data=true;
-		pub_trajectory=nh.advertise<geometry_msgs::Pose>("/setpoint", 1);
+		pub_trajectory=nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
 		pub_moved=nh.advertise<std_msgs::Bool>("/moved",1);
 		// sub_cameraCal=nh.subscribe("/camerapose", 1, &main_controller::setCameraPose, this);
 		setCameraPose();
@@ -425,7 +437,8 @@ public:
 		// sub_puzzlePiece=nh.subscribe("/feature_matcher/piece_pose", 1, &main_controller::puzzleSolver, this);
 		sub_puzzlePiece=nh.subscribe("/feature_matcher/homographic_transform", 1, &main_controller::findImageCenter, this);
 
-		pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
+		// pub_gripper=nh.advertise<std_msgs::UInt16>("/servo",1);
+		pub_gripper=nh.advertise<jps_traveler::MotionWithTime>("/servo",1);
 
 	}
 
