@@ -60,6 +60,8 @@ class main_controller{
       home=pose;
       double temp=pose.position.y;
 
+      bool flag=false;
+
       // pose.position=(0.266, 0.422, 0.432);
       // pose.orientation(-0.271, 0.653, 0.272, 0.653);
       // tf::Quaternion quat(-0.271, 0.653, 0.272, 0.653);
@@ -68,39 +70,68 @@ class main_controller{
       m.pose=pose;
       m.sec=6;
       pub_trajectory.publish(m);
-      ros::Duration(m.sec+2).sleep();
-      pub_moved.publish(msg);
-      // ros::Duration(2).sleep();
-      // for(int i=1;i<=5;i++)
-      // {
-      // 	for(int j=1;j<=5;j++)
-      // 	// pose.position.x+=1/50.0;
-      // 	{
-      // 		pose.position.y+=3.0/100.0;
-      // 		// std::cout<<pose<<std::endl;
-      // 		ROS_INFO_STREAM(pose);
-      // 		pub_trajectory.publish(pose);
-      // 		ros::Duration(10).sleep();
-      // 		pub_moved.publish(msg);
-      // 		ros::Duration(2).sleep();
-      // 		// std::cout<<"pose executed"<<std::endl;
-      // 		ROS_INFO_STREAM("pose executed");
-      // 	}
-      // 	pose.position.x+=3.0/100.0;
-      // 	pose.position.y=temp;
-      // 	pub_trajectory.publish(pose);
-      // 	ros::Duration(10).sleep();
-      // 	pub_moved.publish(msg);
-      // 	ros::Duration(2).sleep();
-      // }
+	  ros::Duration(m.sec+2).sleep();
+
+      jps_feature_matching::FindPieceTransform srv;
+      piece_transform_client.call(srv);
+      if(srv.response.new_piece_found){
+      	while(!flag)
+      	{
+      		piece_transform_client.call(srv);
+      		flag=findImageCenter(srv);
+      	}
+      }
+      else
+      	ROS_INFO("no piece found");
+      flag=false;
+      for(int i=1;i<=5;i++)
+      {
+      	for(int j=1;j<=5;j++)
+      	// pose.position.x+=1/50.0;
+      	{
+      		pose.position.y+=3.0/100.0;
+      		m.pose=pose
+      		m.sec=3;
+      		// std::cout<<pose<<std::endl;
+      		ROS_INFO_STREAM(pose);
+      		pub_trajectory.publish(m);
+      		ros::Duration(m.sec+2).sleep();
+
+      		piece_transform_client.call(srv);
+		      if(srv.response.new_piece_found){
+		      	while(!flag)
+		      	{
+		      		piece_transform_client.call(srv);
+		      		flag=findImageCenter(srv);
+		      	}
+		      }
+		      else
+		      	ROS_INFO("no piece found");
+		      flag=false;
+      		ROS_INFO_STREAM("pose executed");
+      	}
+      	pose.position.x+=3.0/100.0;
+      	pose.position.y=temp;
+      	m.pose=pose;
+      	pub_trajectory.publish(m);
+      	ros::Duration(m.sec+2).sleep();
+
+      	if(srv.response.new_piece_found){
+	      	while(!flag)
+	      	{
+	      		piece_transform_client.call(srv);
+	      		flag=findImageCenter(srv);
+	      	}
+	      }
+      	else
+      		ROS_INFO("no piece found");
+      	flag=false;
+      }
       // std::cout<<"after everything"<<std::endl;
       ROS_INFO_STREAM("after everything");
 
-      jps_feature_matching::FindPieceTransform s;
-      bool flag=false;
-
-      while(!flag)
-        flag=findImageCenter();
+      // jps_feature_matching::FindPieceTransform s;
+      
 
     }
 
@@ -112,11 +143,10 @@ class main_controller{
       // camframe.position.x=p.position.x;
     }
 
-    bool findImageCenter()		//(const geometry_msgs::PoseStamped imagePose)
+    bool findImageCenter(jps_feature_matching::FindPieceTransform piece)		//(const geometry_msgs::PoseStamped imagePose)
     {
-      jps_feature_matching::FindPieceTransform srv;
-      piece_transform_client.call(srv);
-      geometry_msgs::PoseStamped imagePose = srv.response.pose;	
+      
+      geometry_msgs::PoseStamped imagePose = piece.pose;	
       double x_gain = 1.0 / 10000.0;
       double y_gain = 1.0 / 10000.0;
       double theta_gain = 0.9;
