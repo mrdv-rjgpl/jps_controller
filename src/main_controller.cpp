@@ -174,8 +174,12 @@ private:
       listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
       listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
 
-      goal_pose.position.x = base_cam_transform.getOrigin().x() + 0.006;
-      goal_pose.position.y = base_cam_transform.getOrigin().y() - 0.002;
+      Eigen::Matrix<double,4,4> base_ee_mat = transformToMatrix(base_ee_transform);
+      Eigen::Matrix<double,4,1> puzzle_offset_ee(0.006,-0.002,0,0);
+      Eigen::Matrix<double, 4, 1> puzzle_offset_base = base_ee_mat * puzzle_offset_ee;
+
+      goal_pose.position.x = base_cam_transform.getOrigin().x() + puzzle_offset_base(0);
+      goal_pose.position.y = base_cam_transform.getOrigin().y() + puzzle_offset_base(1);
       goal_pose.position.z = base_cam_transform.getOrigin().z();
       goal_pose.orientation.x = base_ee_transform.getRotation().x();
       goal_pose.orientation.y = base_ee_transform.getRotation().y();
@@ -367,7 +371,7 @@ private:
         msg.pose = this->travel_pose;
         ee_distance = sqrt(
           (this->travel_pose.position.x - base_ee_transform.getOrigin().x()) * (this->travel_pose.position.x - base_ee_transform.getOrigin().x())
-          + (this->travel_pose.position.y - base_ee_transform.getOrigin().y()) * (this->travel_pose.position.y - base_ee_transform.getOrigin().y())
+          + (this->travstel_pose.position.y - base_ee_transform.getOrigin().y()) * (this->travel_pose.position.y - base_ee_transform.getOrigin().y())
           + (this->travel_pose.position.z - base_ee_transform.getOrigin().z()) * (this->travel_pose.position.z - base_ee_transform.getOrigin().z()));
 
         // Limit the speed to 5 cm/s if the distance to be traveled is more than 10 cm.
