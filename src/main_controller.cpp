@@ -76,22 +76,27 @@ void runRobot(const ros::TimerEvent&)
 
       if(this->num_pieces_placed >= 4)
       {
+        ROS_INFO("All pieces successfully placed.\n");
       	// No operation
       }
       else if(this->piece_gripped)
       {
+        ROS_INFO("Placing piece...\n");
       	this->placePiece();
       }
       else if(this->piece_centered)
       {
+        ROS_INFO("Picking piece...\n");
       	this->pickPiece();
       }
       else if(this->piece_in_frame)
       {
+        ROS_INFO("Centering camera on piece...\n");
       	this->centerPiece();
       }
       else
       {
+        ROS_INFO("Traveling across workspace...\n");
       	this->travel();
       }
 }
@@ -99,8 +104,9 @@ void runRobot(const ros::TimerEvent&)
 
 void getSurfData(const geometry_msgs::PoseStamped p)
 {
-	imagePose = p;
-	this->piece_in_frame = true;
+  imagePose = p;
+  this->piece_in_frame = true;
+  ROS_INFO("Piece found in frame during image callback.\n");
 }
 
 void placePiece(void)
@@ -339,34 +345,42 @@ void centerPiece(void)
 
 void travel(void)
 {
-	// TODO: Move EE to next pose in list
-	// TODO: Increment pose counter.
-	static int i=0;
-	static int j=0;
-	if(j!=4)
-	{
-		geometry_msgs::Pose pose=home;
-		pose.position.y+=3.0/100.0;
-		i++;
-		jps_traveler::MotionWithTime m;
-      	m.pose=pose;
-      	m.sec=6;
-      	pub_trajectory.publish(m);
-      	ros::Duration(m.sec+2).sleep();
-		if(i==4)
-		{
-			pose.position.x+=3.0/100;
-			i=0;
-			j++;
-			m.pose=pose;
-      		m.sec=6;
-      		pub_trajectory.publish(m);
-      		ros::Duration(m.sec+2).sleep();
-		}
+  // TODO: Move EE to next pose in list
+  // TODO: Increment pose counter.
+  static int i=0;
+  static int j=0;
+  static geometry_msgs::Pose pose = home;
 
-	}
-	else
-		ROS_INFO_STREAM("out of workspace");
+  if(j!=4)
+  {
+    pose.position.y+=3.0/100.0;
+    i++;
+    jps_traveler::MotionWithTime m;
+    m.pose=pose;
+    m.sec=6;
+    pub_trajectory.publish(m);
+    ros::Duration(m.sec+2).sleep();
+
+    if(i==4)
+    {
+      pose = home;
+      pose.position.x += 3.0/100.0;
+      i=0;
+      j++;
+      m.pose=pose;
+      m.sec=6;
+      pub_trajectory.publish(m);
+      ros::Duration(m.sec+2).sleep();
+    }
+    else
+    {
+      // No operation
+    }
+  }
+  else
+  {
+    ROS_INFO_STREAM("out of workspace");
+  }
 }
 
 
