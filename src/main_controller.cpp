@@ -160,6 +160,8 @@ class main_controller{
         pub_trajectory.publish(m);
         ros::Duration(m.sec+2).sleep();
 
+        goalPose.position.x+=0.003;
+        goalPose.position.y-=0.003;
         goalPose.position.z=0.199;
         m.pose=goalPose;
         ROS_INFO_STREAM("sending to puzzle position"<<goalPose);
