@@ -160,12 +160,18 @@ class main_controller{
         pub_trajectory.publish(m);
         ros::Duration(m.sec+2).sleep();
 
-        goalPose.position.z=0.200;
+        goalPose.position.z=0.199;
         m.pose=goalPose;
         ROS_INFO_STREAM("sending to puzzle position"<<goalPose);
         ros::Duration(3).sleep();
         pub_trajectory.publish(m);
         ros::Duration(m.sec+2).sleep();
+
+  	    pub_gripper.publish(angle_grip);
+
+
+
+
       }
       else
       {
