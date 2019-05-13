@@ -111,6 +111,7 @@ private:
 		double theta_gain = 1/20.0;
 
 		double theta=2*atan2(imagePose.pose.orientation.z,imagePose.pose.orientation.w);
+    ROS_INFO_STREAM("Obtained differential angle of " << theta);
 
 
 		if(imagePose.pose.position.z<2 && theta<0.05)
@@ -219,7 +220,7 @@ private:
 
 			theta*=theta_gain;
 
-			Eigen::Quaterniond q_x(0, 0, sin(theta/2), cos(theta/2));
+			Eigen::Quaterniond q_x(sin(theta/2), 0, 0, cos(theta/2));
 			Eigen::Quaterniond q_curr(base_ee_transform.getRotation().x(),
 									  base_ee_transform.getRotation().y(),
 									  base_ee_transform.getRotation().z(),
@@ -232,13 +233,14 @@ private:
 		    resultQ.vec() = q_x.w() * q_curr.vec() + q_curr.w() * q_x.vec() 
 		    + q_x.vec().cross(q_curr.vec());
 
-			if(resultQ.w()<0)
+			if(resultQ.w() < 0)
 			{
-				resultQ.w()*=-1;
+				resultQ.w() *= -1;
 				resultQ.x()*=-1;
 				resultQ.y()*=-1;
 				resultQ.z()*=-1;
 			}
+
 			resultQ.normalize();
 
 
@@ -251,7 +253,7 @@ private:
 			goalPose.orientation.y=base_ee_transform.getRotation().y();
 			goalPose.orientation.z=base_ee_transform.getRotation().z();
 			goalPose.orientation.w=base_ee_transform.getRotation().w();
-			ROS_INFO_STREAM("goal pose in base coord after translation: "<<goalPose);
+			ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
 			pub_trajectory.publish(goalPose);
 			ros::Duration(10).sleep();
 
@@ -265,6 +267,11 @@ private:
 			goalPose.orientation.z=resultQ.z();
 			goalPose.orientation.w=resultQ.w();
 
+      ROS_INFO_STREAM("Quaternion to be rotated by: ["
+          << resultQ.x() << ", "
+          << resultQ.y() << ", "
+          << resultQ.z() << ", "
+          << resultQ.w() << "]");
 
 			ROS_INFO_STREAM("goal pose in base coord after rotation: "<<goalPose);
 			pub_trajectory.publish(goalPose);
@@ -281,7 +288,7 @@ private:
           << base_ee_transform.getRotation().z() << "\n"
           << base_ee_transform.getRotation().w() << "\n"
           );
-			ROS_INFO_STREAM("goal pose in base coord: "<<goalPose);
+			ROS_INFO_STREAM("goal pose in base coord:\n"<< goalPose);
 			pub_trajectory.publish(goalPose);
 			ros::Duration(10).sleep();
 
