@@ -273,17 +273,17 @@ class main_controller{
         goalPose.position.x=trans_baseCoord(0,0) + base_ee_transform.getOrigin().x();
         goalPose.position.y=trans_baseCoord(1,0) + base_ee_transform.getOrigin().y();
         goalPose.position.z=base_ee_transform.getOrigin().z();
-        goalPose.orientation.x=base_ee_transform.getRotation().x();
-        goalPose.orientation.y=base_ee_transform.getRotation().y();
-        goalPose.orientation.z=base_ee_transform.getRotation().z();
-        goalPose.orientation.w=base_ee_transform.getRotation().w();
-        ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
+        // goalPose.orientation.x=base_ee_transform.getRotation().x();
+        // goalPose.orientation.y=base_ee_transform.getRotation().y();
+        // goalPose.orientation.z=base_ee_transform.getRotation().z();
+        // goalPose.orientation.w=base_ee_transform.getRotation().w();
+        // ROS_INFO_STREAM("goal pose in base coord after translation: "<< goalPose);
 
-        jps_traveler::MotionWithTime m;
-        m.pose=goalPose;
-        m.sec=8;
-        pub_trajectory.publish(m);
-        ros::Duration(m.sec+2).sleep();
+        // jps_traveler::MotionWithTime m;
+        // m.pose=goalPose;
+        // m.sec=8;
+        // pub_trajectory.publish(m);
+        // ros::Duration(m.sec+2).sleep();
 
 
 
