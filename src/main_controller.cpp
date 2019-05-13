@@ -70,7 +70,7 @@ private:
     else if (this->piece_gripped)
     {
       ROS_INFO("Placing piece...\n");
-      //this->placePiece();
+      this->placePiece();
     }
     else if (this->piece_centered)
     {
@@ -103,20 +103,39 @@ private:
   {
     tf::StampedTransform base_ee_transform;
     jps_traveler::MotionWithTime msg;
-    geometry_msgs::Pose goal_pose;
 
     if(this->piece_index >= 0)
     {
-      // TODO: Move the EE to a pre-programmed position based on the piece index.
       try
       {
+        // Move the EE to a pre-programmed position based on the piece index.
         listener.waitForTransform("/base_link", "/ee_link", ros::Time(0), ros::Duration(10.0));
         listener.lookupTransform("/base_link", "/ee_link", ros::Time(0), base_ee_transform);
-        goal_pose = this->piece_goal_poses[this->piece_index];
-        msg.pose = goal_pose;
+        msg.pose = this->piece_goal_poses[this->piece_index];
         msg.sec = 6;
         pub_trajectory.publish(msg);
-        ros::Duration(m.sec + 2).sleep();
+        ros::Duration(msg.sec + 2).sleep();
+
+        // Move the EE down to the pad.
+        msg.pose.position.z = this->ground_z;
+        msg.sec = 4;
+        pub_trajectory.publish(msg);
+        ros::Duration(msg.sec + 2).sleep();
+
+        // Deactivate the vacuum gripper
+        this->pub_gripper.publish(angle_ungrip);
+        ros::Duration(2).sleep();
+        this->piece_gripped = false;
+
+        // Raise the EE back up to the original position.
+        msg.pose = this->piece_goal_poses[this->piece_index];
+        msg.sec = 6;
+        pub_trajectory.publish(msg);
+        ros::Duration(msg.sec + 2).sleep();
+        this->num_pieces_placed++;
+        this->piece_index = -1;
+        this->piece_centered = false;
+        this->piece_in_frame = false;
       }
       catch (tf::TransformException &ex)
       {
@@ -125,22 +144,11 @@ private:
     }
     else
     {
+      // Deactivate the vacuum gripper
+      this->pub_gripper.publish(angle_ungrip);
+      ros::Duration(2).sleep();
+      this->piece_gripped = false;
       ROS_ERROR_STREAM("Invalid piece index: " << this->piece_index);
-    }
-
-    // Deactivate the vacuum gripper
-    this->pub_gripper.publish(angle_ungrip);
-    ros::Duration(2).sleep();
-    this->piece_gripped = false;
-
-    if(this->piece_index >= 0)
-    {
-      this->num_pieces_placed++;
-      this->piece_index = -1;
-    }
-    else
-    {
-      // No operation
     }
   }
 
