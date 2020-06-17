@@ -93,10 +93,17 @@ private:
 
   void getSurfData(const geometry_msgs::PoseStamped p)
   {
-    image_pose = p;
-    this->piece_in_frame = true;
-    sscanf(p.header.frame_id.c_str(), "%d", &piece_index);
-    ROS_INFO_STREAM("Piece " << this->piece_index << " found in frame during image callback.\n");
+    if((this->piece_gripped == false) && (this->piece_centered == false))
+    {
+      image_pose = p;
+      this->piece_in_frame = true;
+      sscanf(p.header.frame_id.c_str(), "%d", &piece_index);
+      ROS_INFO_STREAM("Piece " << this->piece_index << " found in frame during image callback.\n");
+    }
+    else
+    {
+      // No operation
+    }
   }
 
   void placePiece(void)
@@ -364,7 +371,7 @@ private:
     jps_traveler::MotionWithTime msg;
     tf::StampedTransform base_ee_transform;
 
-    if(this->robot_pose_index < 36)
+    if(this->robot_pose_index < 48)
     {
       try
       {
@@ -403,7 +410,7 @@ private:
         // Increment pose counter and update next travel pose.
         this->robot_pose_index++;
 
-        if(this->robot_pose_index % 6 == 0)
+        if(this->robot_pose_index % 8 == 0)
         {
           this->travel_pose.position.x += this->robot_delta_x;
           this->robot_delta_y *= -1.0;
@@ -459,12 +466,12 @@ public:
       this->piece_goal_poses[i].orientation.w = 0.704;
     }
 
-    this->piece_goal_poses[0].position.x = 0.285;
+    this->piece_goal_poses[0].position.x = 0.283;
     this->piece_goal_poses[0].position.y = 0.438;
-    this->piece_goal_poses[1].position.x = 0.328;
-    this->piece_goal_poses[1].position.y = 0.481;
-    this->piece_goal_poses[2].position.x = 0.332;
-    this->piece_goal_poses[2].position.y = 0.390;
+    this->piece_goal_poses[1].position.x = 0.331;
+    this->piece_goal_poses[1].position.y = 0.484;
+    this->piece_goal_poses[2].position.x = 0.329;
+    this->piece_goal_poses[2].position.y = 0.387;
     this->piece_goal_poses[3].position.x = 0.376;
     this->piece_goal_poses[3].position.y = 0.436;
 
@@ -475,15 +482,18 @@ public:
     z_distance = 0.3;
     stepsize = 0.1;
     msg.data = true;
-    pub_trajectory = nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
-    this->sendToHome();
 
+    ROS_INFO("Initializing publisher for robot...");
+    pub_trajectory = nh.advertise<jps_traveler::MotionWithTime>("/setpoint", 1);
     ROS_INFO("Initializing publisher for gripper...");
     this->pub_gripper = this->nh.advertise<std_msgs::UInt16>("/servo", 1);
     ros::Duration(5).sleep();
     ROS_INFO("Opening gripper...");
     this->pub_gripper.publish(angle_ungrip);
     ros::Duration(2).sleep();
+    ROS_INFO("Homing robot...");
+    this->sendToHome();
+
     ROS_INFO("Initializing SURF feature subscriber...");
     sub_puzzlePiece = this->nh.subscribe(
         "/feature_matcher/homographic_transform",
